@@ -1,0 +1,3 @@
+[gd_scene format=3 uid="uid://cv35cg5x8d66s"]
+
+[node name="Bg" type="Parallax2D"]

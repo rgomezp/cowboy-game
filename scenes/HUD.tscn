@@ -1,0 +1,60 @@
+[gd_scene load_steps=2 format=3 uid="uid://cqrgcmewur2n5"]
+
+[ext_resource type="FontFile" uid="uid://bbd3nccrf57vt" path="res://assets/fonts/retro.ttf" id="1_qpvh6"]
+
+[node name="Hud" type="CanvasLayer"]
+
+[node name="ScoreLabel" type="Label" parent="."]
+offset_left = 54.0
+offset_top = 43.0
+offset_right = 259.0
+offset_bottom = 124.0
+theme_override_fonts/font = ExtResource("1_qpvh6")
+theme_override_font_sizes/font_size = 70
+text = "SCORE"
+horizontal_alignment = 1
+
+[node name="HighScoreLabel" type="Label" parent="."]
+offset_left = 681.0
+offset_top = 43.0
+offset_right = 1031.0
+offset_bottom = 124.0
+theme_override_fonts/font = ExtResource("1_qpvh6")
+theme_override_font_sizes/font_size = 70
+text = "HIGH SCORE"
+horizontal_alignment = 1
+
+[node name="StartLabel" type="Label" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -175.0
+offset_top = -40.5
+offset_right = 175.0
+offset_bottom = 40.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("1_qpvh6")
+theme_override_font_sizes/font_size = 70
+text = "TAP TO START"
+horizontal_alignment = 1
+
+[node name="ScoreValue" type="Label" parent="."]
+offset_left = 54.0
+offset_top = 124.0
+offset_right = 259.0
+offset_bottom = 205.0
+theme_override_fonts/font = ExtResource("1_qpvh6")
+theme_override_font_sizes/font_size = 70
+horizontal_alignment = 1
+
+[node name="HighScoreValue" type="Label" parent="."]
+offset_left = 681.0
+offset_top = 124.0
+offset_right = 1031.0
+offset_bottom = 205.0
+theme_override_fonts/font = ExtResource("1_qpvh6")
+theme_override_font_sizes/font_size = 70
+horizontal_alignment = 1
