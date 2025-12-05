@@ -3,11 +3,13 @@ extends Node
 # preload obstacles
 var rock_scene = preload("res://scenes/obstacles/rock.tscn")
 var agave_scene = preload("res://scenes/obstacles/agave.tscn")
+var butterfly_scene = preload("res://scenes/obstacles/butterfly.tscn")
 
 var obstacle_types := [rock_scene, agave_scene]
 var obstacles : Array
 var last_obstacle
 var last_obstacle_score : int = 0
+var butterfly_heights := [150, -300]
 
 const PLAYER_START_POS := Vector2i(19, 166)
 const CAMERA_START_POS := Vector2i(540, 960)
@@ -21,6 +23,8 @@ const MAX_SPEED : int = 20
 var screen_size : Vector2i
 var game_running : bool
 var ground_height : int
+var last_butterfly_time : float = 0.0
+var next_butterfly_interval : float = 0.0
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -32,6 +36,8 @@ func new_game():
 	# reset variables
 	score = 0
 	last_obstacle_score = 0
+	last_butterfly_time = 0.0
+	next_butterfly_interval = randf_range(1.0, 5.0)
 	show_score()
 	game_running = false
 
@@ -53,6 +59,8 @@ func _process(delta: float) -> void:
 			speed = MAX_SPEED
 		# generate obstacles
 		generate_obs()
+		# check butterfly spawning
+		check_butterfly_spawn(delta)
 
 		# move player position & camera
 		$Player.position.x += speed
@@ -82,8 +90,8 @@ func generate_obs():
 		var distance_since_last = score - last_obstacle_score
 		# Use a much larger, more varied random range for spacing
 		# This creates sparse, unpredictable spacing between obstacles
-		var min_spacing = randi_range(1500, 3000)
-		var max_spacing = randi_range(4000, 5000)
+		var min_spacing = randi_range(4000, 7000)
+		var max_spacing = randi_range(10000, 20000)
 		var required_spacing = randi_range(min_spacing, max_spacing)
 		should_generate = distance_since_last >= required_spacing
 
@@ -110,7 +118,19 @@ func generate_obs():
 		add_obs(obs, obs_x, obs_y)
 		last_obstacle_score = score
 
-		
+func check_butterfly_spawn(delta: float):
+	last_butterfly_time += delta
+	if last_butterfly_time >= next_butterfly_interval:
+		# Spawn a butterfly
+		var obs = butterfly_scene.instantiate()
+		var obs_x : int = screen_size.x + score + 100
+		var obs_y : int = butterfly_heights[randi() % butterfly_heights.size()]
+		add_obs(obs, obs_x, obs_y)
+		# Reset timer and set next random interval
+		last_butterfly_time = 0.0
+		next_butterfly_interval = randf_range(5.0, 5.0)
+
+
 func add_obs(obs, x, y):
 		last_obstacle = obs
 		obs.position = Vector2i(x, y)
