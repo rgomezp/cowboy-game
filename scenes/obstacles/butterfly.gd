@@ -10,4 +10,5 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	var main_scene = get_tree().current_scene
 	if main_scene and "speed" in main_scene:
-		position.x -= main_scene.speed / 10
+		# Move the parent Area2D instead of just the sprite
+		get_parent().position.x -= main_scene.speed / 10
