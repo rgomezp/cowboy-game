@@ -67,6 +67,11 @@ func _physics_process(delta: float) -> void:
 			velocity.y = DOUBLE_JUMP_VELOCITY
 			has_double_jumped = true
 			is_tracking_peak = false
-		$AnimatedSprite2D.play("jumping")
+		
+		# Play gliding animation if double jumped, otherwise play jumping
+		if has_double_jumped:
+			$AnimatedSprite2D.play("gliding")
+		else:
+			$AnimatedSprite2D.play("jumping")
 
 	move_and_slide()

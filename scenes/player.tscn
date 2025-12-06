@@ -176,10 +176,10 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mdl7e"]
-size = Vector2(15.285708, 30.999992)
+size = Vector2(14.142851, 30.999992)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_qu4a1"]
-size = Vector2(15.28571, 28)
+size = Vector2(14.142853, 28)
 
 [node name="Player2" type="CharacterBody2D"]
 z_index = 1
@@ -192,14 +192,14 @@ position = Vector2(22.571428, 169)
 sprite_frames = SubResource("SpriteFrames_qlg0r")
 animation = &"gliding"
 autoplay = "idle"
-frame_progress = 0.44110212
+frame_progress = 0.7708032
 
 [node name="RunCollisionShape" type="CollisionShape2D" parent="."]
-position = Vector2(21.78571, 169.49995)
-scale = Vector2(0.9999998, 0.9999998)
+position = Vector2(22.357138, 169.49992)
+scale = Vector2(0.99999976, 0.99999976)
 shape = SubResource("RectangleShape2D_mdl7e")
 
 [node name="SlideCollisionShape" type="CollisionShape2D" parent="."]
-position = Vector2(21.785711, 170.99995)
-scale = Vector2(0.9999998, 0.9999998)
+position = Vector2(22.357138, 170.99992)
+scale = Vector2(0.99999976, 0.99999976)
 shape = SubResource("RectangleShape2D_qu4a1")
