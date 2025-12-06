@@ -1,22 +1,25 @@
 extends Node
 
-# preload obstacles
+# Preload obstacles
 var rock_scene = preload("res://scenes/obstacles/rock.tscn")
 var agave_scene = preload("res://scenes/obstacles/agave.tscn")
 var butterfly_scene = preload("res://scenes/obstacles/butterfly.tscn")
 
-var obstacle_types := [rock_scene, agave_scene]
-var obstacles : Array
-var last_obstacle
-var last_obstacle_score : int = 0
-var butterfly_heights := [150, -300]
+# Preload manager scripts
+var ScoreManager = preload("res://scenes/ScoreManager.gd")
+var ObstacleManager = preload("res://scenes/ObstacleManager.gd")
+var ButterflySpawner = preload("res://scenes/ButterflySpawner.gd")
+var CollisionHandler = preload("res://scenes/CollisionHandler.gd")
+
+# Manager instances
+var score_manager: Node
+var obstacle_manager: Node
+var butterfly_spawner: Node
+var collision_handler: Node
 
 const PLAYER_START_POS := Vector2i(19, 166)
 const CAMERA_START_POS := Vector2i(540, 960)
 
-var score : int
-var high_score : int
-var SCORE_MODIFIER : int = 100
 var speed : float
 const START_SPEED : float = 10.0
 const SPEED_MODIFIER : int = 10_000
@@ -24,38 +27,60 @@ const MAX_SPEED : int = 15
 var screen_size : Vector2i
 var game_running : bool
 var ground_height : int
-var last_butterfly_time : float = 0.0
-var next_butterfly_interval : float = 0.0
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	screen_size = get_window().size	# see how far we've scrolled
+	screen_size = get_window().size
 	ground_height = $Ground.get_node("Sprite2D").texture.get_height()
 	$GameOver.get_node("Button").pressed.connect(new_game)
+	
+	# Initialize managers
+	setup_managers()
+	
 	new_game()
 
+func setup_managers():
+	# Create and add manager nodes
+	score_manager = ScoreManager.new()
+	add_child(score_manager)
+	score_manager.score_updated.connect(_on_score_updated)
+	score_manager.high_score_updated.connect(_on_high_score_updated)
+	
+	obstacle_manager = ObstacleManager.new()
+	add_child(obstacle_manager)
+	obstacle_manager.obstacle_added.connect(_on_obstacle_added)
+	
+	var obstacle_types: Array[PackedScene] = [rock_scene, agave_scene]
+	var ground_sprite = $Ground.get_node("Sprite2D")
+	obstacle_manager.initialize(obstacle_types, screen_size, ground_sprite)
+	
+	butterfly_spawner = ButterflySpawner.new()
+	add_child(butterfly_spawner)
+	butterfly_spawner.butterfly_spawned.connect(_on_butterfly_spawned)
+	butterfly_spawner.initialize(butterfly_scene, screen_size)
+	
+	collision_handler = CollisionHandler.new()
+	add_child(collision_handler)
+	collision_handler.player_hit_obstacle.connect(_on_player_hit_obstacle)
+	collision_handler.player_bounced_on_butterfly.connect(_on_player_bounced_on_butterfly)
+	collision_handler.initialize($Player)
+
 func new_game():
-	# reset variables
-	score = 0
-	last_obstacle_score = 0
-	last_butterfly_time = 0.0
-	next_butterfly_interval = randf_range(1.0, 5.0)
-	show_score()
+	# Reset managers
+	score_manager.reset()
+	obstacle_manager.reset()
+	butterfly_spawner.reset()
+	
 	game_running = false
 	get_tree().paused = false
-	
-	# delete all obstacles
-	for obs in obstacles:
-		obs.queue_free()
-	obstacles.clear()
 
-	# reset the nodes
+	# Reset the nodes
 	$Player.position = PLAYER_START_POS
 	$Player.velocity = Vector2i(0, 0)
 	$Camera2D.position = CAMERA_START_POS
 	$Ground.position = Vector2i(0, 0)
 
-	#reset hud and game over scene
+	# Reset HUD and game over scene
 	$Hud.get_node("StartLabel").show()
 	$GameOver.hide()
 
@@ -63,138 +88,65 @@ func new_game():
 # Game logic happens here
 func _process(delta: float) -> void:
 	if game_running:
-		speed = START_SPEED + score / SPEED_MODIFIER
+		var current_score = score_manager.score
+		speed = START_SPEED + current_score / SPEED_MODIFIER
 		if speed > MAX_SPEED:
 			speed = MAX_SPEED
-		# generate obstacles
-		generate_obs()
-		# check butterfly spawning
-		check_butterfly_spawn(delta)
+		
+		# Generate obstacles
+		var new_obstacle = obstacle_manager.generate_obstacle(current_score)
+		if new_obstacle:
+			obstacle_manager.add_obstacle(new_obstacle)
+		
+		# Check butterfly spawning
+		var butterfly = butterfly_spawner.update(delta, current_score)
+		if butterfly:
+			obstacle_manager.add_obstacle(butterfly)
 
-		# move player position & camera
+		# Move player position & camera
 		$Player.position.x += speed
 		$Camera2D.position.x += speed
 
-		# update score
-		score += speed
-		show_score()
+		# Update score
+		score_manager.add_score(int(speed))
 
-		# update ground position
+		# Update ground position
 		if $Camera2D.position.x - $Ground.position.x > screen_size.x * 1.5:
 			$Ground.position.x += screen_size.x
 
-		for obs in obstacles:
-			if obs.position.x < ($Camera2D.position.x - screen_size.x):
-				remove_obs
+		# Cleanup off-screen obstacles
+		obstacle_manager.cleanup_off_screen_obstacles($Camera2D.position.x)
 	else:
 		if Input.is_action_pressed("ui_accept"):
 			game_running = true
 			$Hud.get_node("StartLabel").hide()
 
-func show_score():
-	$Hud.get_node("ScoreValue").text = str(score / SCORE_MODIFIER)
+# Signal handlers
+func _on_score_updated(score: int):
+	$Hud.get_node("ScoreValue").text = str(score_manager.get_display_score())
 
-func check_high_score():
-	if score > high_score:
-		high_score = score
-	$Hud.get_node("HighScoreValue").text = str(high_score / SCORE_MODIFIER)
+func _on_high_score_updated(high_score: int):
+	$Hud.get_node("HighScoreValue").text = str(score_manager.get_display_high_score())
 
-func generate_obs():
-	var should_generate = false
-	if obstacles.is_empty():
-		should_generate = true
-	else:
-		# Calculate distance from last obstacle based on score difference
-		var distance_since_last = score - last_obstacle_score
-		# Use a much larger, more varied random range for spacing
-		# This creates sparse, unpredictable spacing between obstacles
-		var min_spacing = randi_range(4000, 7000)
-		var max_spacing = randi_range(10000, 20000)
-		var required_spacing = randi_range(min_spacing, max_spacing)
-		should_generate = distance_since_last >= required_spacing
+func _on_obstacle_added(obstacle: Node):
+	collision_handler.connect_obstacle_signals(obstacle)
 
-	if should_generate:
-		var obs_type = obstacle_types[randi() % obstacle_types.size()]
-		var obs
-		obs = obs_type.instantiate()
-		var obs_sprite = obs.get_node("Sprite2D")
-		var obs_height = obs_sprite.texture.get_height()
-		var obs_scale = obs_sprite.scale
-		var obs_sprite_offset = obs_sprite.position
-		var ground_sprite = $Ground.get_node("Sprite2D")
-		var ground_top_y = ground_sprite.offset.y
-		# Add some randomness to the x position as well
-		var base_x = screen_size.x + score + 100
-		var random_offset = randi_range(-50, 50)
-		var obs_x : int = base_x + random_offset
-		# Position rock so its bottom edge sits on top of the ground
-		# Ground top is at ground_sprite.offset.y
-		# Rock sprite is centered, so its bottom is at: obs.position.y + obs_sprite_offset.y + (obs_height * obs_scale.y / 2)
-		# We need: obs.position.y + obs_sprite_offset.y + (obs_height * obs_scale.y / 2) = ground_top_y
-		# Add a small offset to push it slightly lower
-		var obs_y : int = ground_top_y - obs_sprite_offset.y - (obs_height * obs_scale.y / 2) + 10
-		add_obs(obs, obs_x, obs_y)
-		last_obstacle_score = score
+func _on_butterfly_spawned(butterfly: Node):
+	# Butterfly is already positioned by ButterflySpawner
+	pass
 
-func check_butterfly_spawn(delta: float):
-	last_butterfly_time += delta
-	if last_butterfly_time >= next_butterfly_interval:
-		# Spawn a butterfly
-		var obs = butterfly_scene.instantiate()
-		var obs_x : int = screen_size.x + score + 100
-		var obs_y : int = butterfly_heights[randi() % butterfly_heights.size()]
-		add_obs(obs, obs_x, obs_y)
-		# Reset timer and set next random interval
-		last_butterfly_time = 0.0
-		next_butterfly_interval = randf_range(5.0, 15.0)
+func _on_player_hit_obstacle(obstacle: Node):
+	game_over()
 
+func _on_player_bounced_on_butterfly(obstacle: Node):
+	# Player jumped on the butterfly from the top - bounce and hide it
+	var bounce_velocity = -1200  # Slightly less than jump velocity for a nice bounce
+	$Player.velocity.y = bounce_velocity
+	obstacle.hide()
+	obstacle_manager.remove_obstacle(obstacle)
 
-func add_obs(obs, x, y):
-		last_obstacle = obs
-		obs.position = Vector2i(x, y)
-		obs.body_entered.connect(func(body): hit_obs(body, obs))
-		# If this is a butterfly, also connect to the top collision Area2D
-		if obs.has_node("TopCollision"):
-			var top_collision = obs.get_node("TopCollision")
-			if top_collision is Area2D:
-				top_collision.body_entered.connect(func(body): hit_top_collision(body, obs))
-		add_child(obs)
-		obstacles.append(obs)
-
-func remove_obs(obs):
-	obs.queue_free()
-	obstacles.erase(obs)
-
-func hit_obs(body, obstacle):
-	if body.name == "Player":
-		# If this is a butterfly, check if player is also overlapping the top collision
-		# If they are, ignore this collision (top collision handler will take care of it)
-		if obstacle.has_node("TopCollision"):
-			var top_collision = obstacle.get_node("TopCollision")
-			if top_collision is Area2D:
-				# Check if player is overlapping with top collision
-				var overlapping_bodies = top_collision.get_overlapping_bodies()
-				if overlapping_bodies.has($Player):
-					# Player is overlapping top collision - ignore this collision
-					# The top collision handler will take care of it
-					return
-			# Player hit the main collision but not the top - game over
-			game_over()
-		else:
-			# Not a butterfly - normal game over
-			game_over()
-
-func hit_top_collision(body, obstacle):
-	if body.name == "Player":
-		# Player jumped on the butterfly from the top - bounce and hide it
-		# Give the player an upward bounce velocity
-		var bounce_velocity = -1200  # Slightly less than jump velocity for a nice bounce
-		$Player.velocity.y = bounce_velocity
-		obstacle.hide()
-		remove_obs(obstacle)
-		
 func game_over():
-	check_high_score()
+	score_manager.check_high_score()
 	get_tree().paused = true
 	game_running = false
 	$GameOver.show()
