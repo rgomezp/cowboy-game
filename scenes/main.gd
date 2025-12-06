@@ -152,7 +152,12 @@ func check_butterfly_spawn(delta: float):
 func add_obs(obs, x, y):
 		last_obstacle = obs
 		obs.position = Vector2i(x, y)
-		obs.body_entered.connect(hit_obs)
+		obs.body_entered.connect(func(body): hit_obs(body, obs))
+		# If this is a butterfly, also connect to the top collision Area2D
+		if obs.has_node("TopCollision"):
+			var top_collision = obs.get_node("TopCollision")
+			if top_collision is Area2D:
+				top_collision.body_entered.connect(func(body): hit_top_collision(body, obs))
 		add_child(obs)
 		obstacles.append(obs)
 
@@ -160,9 +165,33 @@ func remove_obs(obs):
 	obs.queue_free()
 	obstacles.erase(obs)
 
-func hit_obs(body):
+func hit_obs(body, obstacle):
 	if body.name == "Player":
-		game_over()
+		# If this is a butterfly, check if player is also overlapping the top collision
+		# If they are, ignore this collision (top collision handler will take care of it)
+		if obstacle.has_node("TopCollision"):
+			var top_collision = obstacle.get_node("TopCollision")
+			if top_collision is Area2D:
+				# Check if player is overlapping with top collision
+				var overlapping_bodies = top_collision.get_overlapping_bodies()
+				if overlapping_bodies.has($Player):
+					# Player is overlapping top collision - ignore this collision
+					# The top collision handler will take care of it
+					return
+			# Player hit the main collision but not the top - game over
+			game_over()
+		else:
+			# Not a butterfly - normal game over
+			game_over()
+
+func hit_top_collision(body, obstacle):
+	if body.name == "Player":
+		# Player jumped on the butterfly from the top - bounce and hide it
+		# Give the player an upward bounce velocity
+		var bounce_velocity = -1200  # Slightly less than jump velocity for a nice bounce
+		$Player.velocity.y = bounce_velocity
+		obstacle.hide()
+		remove_obs(obstacle)
 		
 func game_over():
 	check_high_score()
