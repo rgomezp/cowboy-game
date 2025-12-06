@@ -5,7 +5,8 @@ var rock_scene = preload("res://scenes/obstacles/rock.tscn")
 var agave_scene = preload("res://scenes/obstacles/agave.tscn")
 var butterfly_scene = preload("res://scenes/obstacles/butterfly.tscn")
 var coin_scene = preload("res://scenes/items/Coin.tscn")
-var furry_scene = preload("res://scenes/foes/furry.tscn")
+var furry_scene = preload("res://scenes/foes/furry/furry.tscn")
+var troll_scene = preload("res://scenes/foes/troll/troll.tscn")
 
 # Preload manager scripts
 var ScoreManager = preload("res://scenes/ScoreManager.gd")
@@ -92,7 +93,8 @@ func setup_managers():
 	foe_spawner = FoeSpawner.new()
 	add_child(foe_spawner)
 	foe_spawner.foe_spawned.connect(_on_foe_spawned)
-	foe_spawner.initialize(furry_scene, screen_size, ground_sprite)
+	var foe_types: Array[PackedScene] = [furry_scene, troll_scene]
+	foe_spawner.initialize(foe_types, screen_size, ground_sprite)
 
 	foe_manager = FoeManager.new()
 	add_child(foe_manager)

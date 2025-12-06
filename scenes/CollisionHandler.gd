@@ -19,7 +19,7 @@ func handle_obstacle_collision(body: Node, obstacle: Node):
 
 		# Check for top collision FIRST (before checking destroyed flag) to handle race conditions
 		# If this is a foe, check if player is also overlapping the top collision
-		var is_foe = obstacle.name == "Furry" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and "furry.gd" in obstacle.get_script().resource_path)
+		var is_foe = obstacle.name == "Furry" or obstacle.name == "Troll" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and ("furry.gd" in obstacle.get_script().resource_path or "troll.gd" in obstacle.get_script().resource_path))
 		if is_foe and obstacle.has_node("CollisionBoxTop"):
 			var top_collision = obstacle.get_node("CollisionBoxTop")
 			if top_collision is Area2D:
@@ -75,8 +75,8 @@ func handle_top_collision(body: Node, obstacle: Node):
 	# Check if body is the player
 	var is_player = body == player or body.name == "Player" or body.name == "Player2"
 	if is_player:
-		# Check if this is a foe (has furry.gd script or name is Furry)
-		var is_foe = obstacle.name == "Furry" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and "furry.gd" in obstacle.get_script().resource_path)
+		# Check if this is a foe (has furry.gd or troll.gd script or name is Furry/Troll)
+		var is_foe = obstacle.name == "Furry" or obstacle.name == "Troll" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and ("furry.gd" in obstacle.get_script().resource_path or "troll.gd" in obstacle.get_script().resource_path))
 		if is_foe:
 			# Immediately disable main collision BEFORE emitting signal to prevent race condition
 			if obstacle.has_node("CollisionBox"):

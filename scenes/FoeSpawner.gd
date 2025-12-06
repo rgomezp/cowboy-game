@@ -2,13 +2,13 @@ extends Node
 
 signal foe_spawned(foe: Node)
 
-var foe_scene: PackedScene
+var foe_types: Array[PackedScene]
 var last_foe_distance: int = 0
 var screen_size: Vector2i
 var ground_sprite: Sprite2D
 
-func initialize(foe_scene: PackedScene, screen_size: Vector2i, ground_sprite: Sprite2D):
-	self.foe_scene = foe_scene
+func initialize(foe_scenes: Array[PackedScene], screen_size: Vector2i, ground_sprite: Sprite2D):
+	foe_types = foe_scenes
 	self.screen_size = screen_size
 	self.ground_sprite = ground_sprite
 
@@ -31,7 +31,8 @@ func update(current_distance: int) -> Node:
 	return null
 
 func spawn_foe(current_distance: int) -> Node:
-	var foe = foe_scene.instantiate()
+	var foe_type = foe_types[randi() % foe_types.size()]
+	var foe = foe_type.instantiate()
 	
 	var foe_sprite = foe.get_node("AnimatedSprite2D")
 	var foe_sprite_frames = foe_sprite.sprite_frames
