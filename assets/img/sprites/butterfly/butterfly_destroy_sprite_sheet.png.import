@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bhr6kjvdhj8yn"
-path="res://.godot/imported/butterfly_sprite_sheet.png-b46fa89e24b44e450300a1bffd3ce9ab.ctex"
+uid="uid://cv2yfgc70w7it"
+path="res://.godot/imported/butterfly_destroy_sprite_sheet.png-dde0a18be71869d22eab0ef1a57aa18c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/img/sprites/butterfly_sprite_sheet.png"
-dest_files=["res://.godot/imported/butterfly_sprite_sheet.png-b46fa89e24b44e450300a1bffd3ce9ab.ctex"]
+source_file="res://assets/img/sprites/butterfly/butterfly_destroy_sprite_sheet.png"
+dest_files=["res://.godot/imported/butterfly_destroy_sprite_sheet.png-dde0a18be71869d22eab0ef1a57aa18c.ctex"]
 
 [params]
 

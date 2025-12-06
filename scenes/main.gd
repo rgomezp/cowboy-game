@@ -264,11 +264,17 @@ func _on_player_hit_obstacle(obstacle: Node):
 	game_over()
 
 func _on_player_bounced_on_butterfly(obstacle: Node):
-	# Player jumped on the butterfly from the top - bounce and hide it
+	# Player jumped on the butterfly from the top - bounce and destroy it
 	var bounce_velocity = -1200  # Slightly less than jump velocity for a nice bounce
 	$Player.velocity.y = bounce_velocity
-	obstacle.hide()
-	obstacle_manager.remove_obstacle(obstacle)
+	# Play destroy animation before removing
+	if obstacle.has_node("AnimatedSprite2D"):
+		var animated_sprite = obstacle.get_node("AnimatedSprite2D")
+		if animated_sprite.has_method("destroy"):
+			animated_sprite.destroy()
+	# Remove from manager's list (but don't queue_free yet - let animation finish)
+	if obstacle_manager.obstacles.has(obstacle):
+		obstacle_manager.obstacles.erase(obstacle)
 	# Award 100 points for bouncing on a butterfly (100 * 100 = 10000 raw score)
 	score_manager.add_score(100 * 100, true)  # Show delta for bonus event
 

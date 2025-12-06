@@ -16,7 +16,7 @@ func handle_obstacle_collision(body: Node, obstacle: Node):
 		# Coins handle their own collection, so skip them here
 		if obstacle.name == "Coin" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and "coin.gd" in obstacle.get_script().resource_path):
 			return
-		
+
 		# Check for top collision FIRST (before checking destroyed flag) to handle race conditions
 		# If this is a foe, check if player is also overlapping the top collision
 		var is_foe = obstacle.name == "Furry" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and "furry.gd" in obstacle.get_script().resource_path)
@@ -27,16 +27,33 @@ func handle_obstacle_collision(body: Node, obstacle: Node):
 				if overlapping_bodies.has(player):
 					# Player is overlapping top collision - ignore this collision
 					return
-		
+
 		# If this is a butterfly, check if player is also overlapping the top collision
-		if obstacle.has_node("TopCollision"):
+		var is_butterfly = obstacle.name == "Butterfly" or (obstacle.has_node("AnimatedSprite2D") and obstacle.get_node("AnimatedSprite2D").get_script() != null and obstacle.get_node("AnimatedSprite2D").get_script().resource_path != null and "butterfly.gd" in obstacle.get_node("AnimatedSprite2D").get_script().resource_path)
+		if is_butterfly and obstacle.has_node("TopCollision"):
 			var top_collision = obstacle.get_node("TopCollision")
 			if top_collision is Area2D:
 				var overlapping_bodies = top_collision.get_overlapping_bodies()
 				if overlapping_bodies.has(player):
 					# Player is overlapping top collision - ignore this collision
 					return
-		
+
+		# If this is a butterfly, check if it's already being destroyed (after top collision check)
+		if is_butterfly:
+			if obstacle.has_node("AnimatedSprite2D"):
+				var animated_sprite = obstacle.get_node("AnimatedSprite2D")
+				if animated_sprite.has_method("is_destroyed") and animated_sprite.is_destroyed:
+					# Butterfly is already being destroyed, ignore this collision
+					return
+			# Also check if main collision is disabled
+			if obstacle.has_node("CollisionShape2D") and obstacle.get_node("CollisionShape2D").disabled:
+				# Main collision already disabled, ignore
+				return
+			# Also check if monitoring is disabled
+			if not obstacle.monitoring:
+				# Monitoring disabled, ignore
+				return
+
 		# If this is a foe, check if it's already being destroyed (after top collision check)
 		if is_foe:
 			if obstacle.has_method("is_destroyed") and obstacle.is_destroyed:
@@ -50,7 +67,7 @@ func handle_obstacle_collision(body: Node, obstacle: Node):
 			if not obstacle.monitoring:
 				# Monitoring disabled, ignore
 				return
-		
+
 		# Player hit the main collision but not the top - game over
 		player_hit_obstacle.emit(obstacle)
 
@@ -71,6 +88,18 @@ func handle_top_collision(body: Node, obstacle: Node):
 			# Player jumped on the foe from the top - destroy it
 			player_jumped_on_foe.emit(obstacle)
 		else:
+			# Immediately disable main collision BEFORE emitting signal to prevent race condition
+			if obstacle.has_node("CollisionShape2D"):
+				obstacle.get_node("CollisionShape2D").disabled = true
+			# Disable main Area2D monitoring immediately
+			obstacle.monitoring = false
+			obstacle.monitorable = false
+			# Disable top collision
+			if obstacle.has_node("TopCollision"):
+				var top_collision = obstacle.get_node("TopCollision")
+				if top_collision is Area2D:
+					top_collision.monitoring = false
+					top_collision.monitorable = false
 			# Player jumped on the butterfly from the top - bounce
 			player_bounced_on_butterfly.emit(obstacle)
 
@@ -78,17 +107,17 @@ func connect_obstacle_signals(obstacle: Node):
 	# Skip coins - they handle their own collision detection
 	if obstacle.name == "Coin" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and "coin.gd" in obstacle.get_script().resource_path):
 		return
-	
+
 	# Only connect body_entered for Area2D nodes (butterflies, foes, etc.)
 	if obstacle is Area2D:
 		obstacle.body_entered.connect(func(body): handle_obstacle_collision(body, obstacle))
-	
+
 	# If this is a butterfly, also connect to the top collision Area2D
 	if obstacle.has_node("TopCollision"):
 		var top_collision = obstacle.get_node("TopCollision")
 		if top_collision is Area2D:
 			top_collision.body_entered.connect(func(body): handle_top_collision(body, obstacle))
-	
+
 	# If this is a foe, also connect to the CollisionBoxTop Area2D
 	if obstacle.has_node("CollisionBoxTop"):
 		var top_collision = obstacle.get_node("CollisionBoxTop")
