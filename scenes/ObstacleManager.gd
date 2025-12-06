@@ -5,7 +5,7 @@ signal obstacle_removed(obstacle: Node)
 
 var obstacle_types: Array[PackedScene]
 var obstacles: Array = []
-var last_obstacle_score: int = 0
+var last_obstacle_distance: int = 0  # Track distance, not score
 var screen_size: Vector2i
 var ground_sprite: Sprite2D
 
@@ -15,7 +15,7 @@ func initialize(obstacle_scenes: Array[PackedScene], screen_size: Vector2i, grou
 	self.ground_sprite = ground_sprite
 
 func reset():
-	last_obstacle_score = 0
+	last_obstacle_distance = 0
 	clear_all_obstacles()
 
 func clear_all_obstacles():
@@ -23,18 +23,18 @@ func clear_all_obstacles():
 		obs.queue_free()
 	obstacles.clear()
 
-func should_generate_obstacle(current_score: int) -> bool:
+func should_generate_obstacle(current_distance: int) -> bool:
 	if obstacles.is_empty():
 		return true
 	
-	var distance_since_last = current_score - last_obstacle_score
+	var distance_since_last = current_distance - last_obstacle_distance
 	var min_spacing = randi_range(4000, 7000)
 	var max_spacing = randi_range(10000, 20000)
 	var required_spacing = randi_range(min_spacing, max_spacing)
 	return distance_since_last >= required_spacing
 
-func generate_obstacle(current_score: int) -> Node:
-	if not should_generate_obstacle(current_score):
+func generate_obstacle(current_distance: int) -> Node:
+	if not should_generate_obstacle(current_distance):
 		return null
 	
 	var obs_type = obstacle_types[randi() % obstacle_types.size()]
@@ -48,7 +48,7 @@ func generate_obstacle(current_score: int) -> Node:
 	var ground_top_y = ground_sprite.offset.y
 	
 	# Add some randomness to the x position
-	var base_x = screen_size.x + current_score + 100
+	var base_x = screen_size.x + current_distance + 100
 	var random_offset = randi_range(-50, 50)
 	var obs_x: int = base_x + random_offset
 	
@@ -58,7 +58,7 @@ func generate_obstacle(current_score: int) -> Node:
 	# Set position on obstacle
 	obs.position = Vector2i(obs_x, obs_y)
 	
-	last_obstacle_score = current_score
+	last_obstacle_distance = current_distance
 	return obs
 
 func add_obstacle(obs: Node):

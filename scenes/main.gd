@@ -32,6 +32,7 @@ const MAX_SPEED : int = 15
 var screen_size : Vector2i
 var game_running : bool
 var ground_height : int
+var distance : int = 0  # Track actual distance traveled, separate from score
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -91,6 +92,7 @@ func new_game():
 
 	game_running = false
 	get_tree().paused = false
+	distance = 0  # Reset distance
 
 	# Reset the nodes
 	$Player.position = PLAYER_START_POS
@@ -106,23 +108,23 @@ func new_game():
 # Game logic happens here
 func _process(delta: float) -> void:
 	if game_running:
-		var current_score = score_manager.score
-		speed = START_SPEED + current_score / SPEED_MODIFIER
+		# Calculate speed based on distance traveled, not score
+		speed = START_SPEED + distance / SPEED_MODIFIER
 		if speed > MAX_SPEED:
 			speed = MAX_SPEED
 
 		# Generate obstacles
-		var new_obstacle = obstacle_manager.generate_obstacle(current_score)
+		var new_obstacle = obstacle_manager.generate_obstacle(distance)
 		if new_obstacle:
 			obstacle_manager.add_obstacle(new_obstacle)
 
 		# Check butterfly spawning
-		var butterfly = butterfly_spawner.update(delta, current_score)
+		var butterfly = butterfly_spawner.update(delta, distance)
 		if butterfly:
 			obstacle_manager.add_obstacle(butterfly)
 
 		# Check coin spawning
-		var coin = coin_spawner.update(delta, current_score)
+		var coin = coin_spawner.update(delta, distance)
 		if coin:
 			coin_manager.add_coin(coin)
 
@@ -130,7 +132,10 @@ func _process(delta: float) -> void:
 		$Player.position.x += speed
 		$Camera2D.position.x += speed
 
-		# Update score
+		# Update distance based on actual movement
+		distance += int(speed)
+
+		# Update score (separate from distance)
 		score_manager.add_score(int(speed))
 
 		# Update ground position
@@ -177,6 +182,8 @@ func _on_player_bounced_on_butterfly(obstacle: Node):
 	$Player.velocity.y = bounce_velocity
 	obstacle.hide()
 	obstacle_manager.remove_obstacle(obstacle)
+	# Award 100 points for bouncing on a butterfly (100 * 100 = 10000 raw score)
+	score_manager.add_score(100 * 100)
 
 func game_over():
 	score_manager.check_high_score()

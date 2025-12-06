@@ -20,18 +20,18 @@ func reset():
 	last_coin_time = 0.0
 	next_coin_interval = randf_range(0.5, 2.0)  # Much more frequent than butterflies
 
-func update(delta: float, current_score: int) -> Node:
+func update(delta: float, current_distance: int) -> Node:
 	last_coin_time += delta
 	if last_coin_time >= next_coin_interval:
-		var coin = spawn_coin(current_score)
+		var coin = spawn_coin(current_distance)
 		last_coin_time = 0.0
 		next_coin_interval = randf_range(0.5, 2.0)  # Spawn every 0.5-2 seconds
 		return coin
 	return null
 
-func spawn_coin(current_score: int) -> Node:
+func spawn_coin(current_distance: int) -> Node:
 	var coin = coin_scene.instantiate()
-	var obs_x: int = screen_size.x + current_score + 100
+	var obs_x: int = screen_size.x + current_distance + 100
 	# Position coin above ground at various heights (all jump-reachable)
 	# Ground top is at 1600.5, so coins hover above it
 	var height_offset = coin_height_offsets[randi() % coin_height_offsets.size()]
