@@ -33,10 +33,10 @@ func _ready() -> void:
 	screen_size = get_window().size
 	ground_height = $Ground.get_node("Sprite2D").texture.get_height()
 	$GameOver.get_node("Button").pressed.connect(new_game)
-	
+
 	# Initialize managers
 	setup_managers()
-	
+
 	new_game()
 
 func setup_managers():
@@ -45,20 +45,20 @@ func setup_managers():
 	add_child(score_manager)
 	score_manager.score_updated.connect(_on_score_updated)
 	score_manager.high_score_updated.connect(_on_high_score_updated)
-	
+
 	obstacle_manager = ObstacleManager.new()
 	add_child(obstacle_manager)
 	obstacle_manager.obstacle_added.connect(_on_obstacle_added)
-	
+
 	var obstacle_types: Array[PackedScene] = [rock_scene, agave_scene]
 	var ground_sprite = $Ground.get_node("Sprite2D")
 	obstacle_manager.initialize(obstacle_types, screen_size, ground_sprite)
-	
+
 	butterfly_spawner = ButterflySpawner.new()
 	add_child(butterfly_spawner)
 	butterfly_spawner.butterfly_spawned.connect(_on_butterfly_spawned)
 	butterfly_spawner.initialize(butterfly_scene, screen_size)
-	
+
 	collision_handler = CollisionHandler.new()
 	add_child(collision_handler)
 	collision_handler.player_hit_obstacle.connect(_on_player_hit_obstacle)
@@ -70,7 +70,7 @@ func new_game():
 	score_manager.reset()
 	obstacle_manager.reset()
 	butterfly_spawner.reset()
-	
+
 	game_running = false
 	get_tree().paused = false
 
@@ -92,12 +92,12 @@ func _process(delta: float) -> void:
 		speed = START_SPEED + current_score / SPEED_MODIFIER
 		if speed > MAX_SPEED:
 			speed = MAX_SPEED
-		
+
 		# Generate obstacles
 		var new_obstacle = obstacle_manager.generate_obstacle(current_score)
 		if new_obstacle:
 			obstacle_manager.add_obstacle(new_obstacle)
-		
+
 		# Check butterfly spawning
 		var butterfly = butterfly_spawner.update(delta, current_score)
 		if butterfly:
