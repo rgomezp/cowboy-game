@@ -3,7 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://bamyrdqraj77v" path="res://assets/img/solid.png" id="1_pybca"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pybca"]
-size = Vector2(2164, 639)
+size = Vector2(2164, 640)
 
 [node name="Ground" type="StaticBody2D"]
 
@@ -13,5 +13,5 @@ centered = false
 offset = Vector2(0, 1271)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(1084, 1600.5)
+position = Vector2(1082, 1600)
 shape = SubResource("RectangleShape2D_pybca")

@@ -68,8 +68,11 @@ func add_obstacle(obs: Node):
 
 func remove_obstacle(obs: Node):
 	if obstacles.has(obs):
-		obs.queue_free()
 		obstacles.erase(obs)
+		# Only queue_free if the object is still valid
+		# (coins might already be queued for deletion)
+		if is_instance_valid(obs):
+			obs.queue_free()
 		obstacle_removed.emit(obs)
 
 func cleanup_off_screen_obstacles(camera_x: float):
@@ -77,5 +80,10 @@ func cleanup_off_screen_obstacles(camera_x: float):
 	# This prevents butterflies and other obstacles from disappearing too early
 	var cleanup_threshold = camera_x - screen_size.x * 2
 	for obs in obstacles.duplicate():
+		# Check if object is still valid (not freed)
+		if not is_instance_valid(obs):
+			# Remove invalid references from array
+			obstacles.erase(obs)
+			continue
 		if obs.position.x < cleanup_threshold:
 			remove_obstacle(obs)
