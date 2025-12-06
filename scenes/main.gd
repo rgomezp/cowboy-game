@@ -274,15 +274,8 @@ func _on_player_bounced_on_butterfly(obstacle: Node):
 
 func _on_player_jumped_on_foe(foe: Node):
 	# Player jumped on the foe from the top - bounce and destroy it
-	# Immediately disable the main collision to prevent game over from side collision
+	# Note: CollisionHandler already disabled main collision, but we ensure it here too as backup
 	if foe and is_instance_valid(foe):
-		# Disable main collision immediately
-		if foe.has_node("CollisionBox"):
-			foe.get_node("CollisionBox").disabled = true
-		# Disable main Area2D monitoring immediately
-		foe.monitoring = false
-		foe.monitorable = false
-		
 		var bounce_velocity = -1200  # Slightly less than jump velocity for a nice bounce
 		# Ensure player is slightly above the foe to prevent being stuck
 		var foe_top = foe.position.y - 50  # Approximate top of foe

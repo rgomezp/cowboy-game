@@ -2,7 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://247a0xmccjof" path="res://assets/img/foes/furry/furry_sprite_sheet.png" id="1_4f5cd"]
 [ext_resource type="Texture2D" uid="uid://b14pnms1ut13o" path="res://assets/img/foes/furry/furry_destroy_sprite_sheet.png" id="2_oj4mi"]
-[ext_resource type="Script" path="res://scenes/foes/furry.gd" id="3_furry"]
+[ext_resource type="Script" uid="uid://cbquk6bb8n2oh" path="res://scenes/foes/furry.gd" id="3_furry"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_oj4mi"]
 atlas = ExtResource("1_4f5cd")
@@ -77,7 +77,7 @@ animations = [{
 size = Vector2(89, 245)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dk2h7"]
-size = Vector2(85, 8)
+size = Vector2(77, 13)
 
 [node name="Furry" type="Area2D"]
 script = ExtResource("3_furry")
@@ -87,7 +87,6 @@ texture_filter = 1
 position = Vector2(159, 165)
 scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_ktwym")
-animation = &"default"
 autoplay = "default"
 
 [node name="CollisionBox" type="CollisionShape2D" parent="."]
@@ -98,4 +97,5 @@ shape = SubResource("RectangleShape2D_bjglj")
 position = Vector2(155.5, 48)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CollisionBoxTop"]
+position = Vector2(-8, -2.5)
 shape = SubResource("RectangleShape2D_dk2h7")
