@@ -5,6 +5,7 @@ var rock_scene = preload("res://scenes/obstacles/rock.tscn")
 var agave_scene = preload("res://scenes/obstacles/agave.tscn")
 var butterfly_scene = preload("res://scenes/obstacles/butterfly.tscn")
 var coin_scene = preload("res://scenes/items/Coin.tscn")
+var furry_scene = preload("res://scenes/foes/furry.tscn")
 
 # Preload manager scripts
 var ScoreManager = preload("res://scenes/ScoreManager.gd")
@@ -12,6 +13,8 @@ var ObstacleManager = preload("res://scenes/ObstacleManager.gd")
 var ButterflySpawner = preload("res://scenes/ButterflySpawner.gd")
 var CoinSpawner = preload("res://scenes/CoinSpawner.gd")
 var CoinManager = preload("res://scenes/CoinManager.gd")
+var FoeSpawner = preload("res://scenes/FoeSpawner.gd")
+var FoeManager = preload("res://scenes/FoeManager.gd")
 var CollisionHandler = preload("res://scenes/CollisionHandler.gd")
 
 # Manager instances
@@ -20,6 +23,8 @@ var obstacle_manager: Node
 var butterfly_spawner: Node
 var coin_spawner: Node
 var coin_manager: Node
+var foe_spawner: Node
+var foe_manager: Node
 var collision_handler: Node
 
 const PLAYER_START_POS := Vector2i(19, 166)
@@ -84,10 +89,21 @@ func setup_managers():
 	coin_manager.coin_added.connect(_on_coin_added)
 	coin_manager.initialize(screen_size)
 
+	foe_spawner = FoeSpawner.new()
+	add_child(foe_spawner)
+	foe_spawner.foe_spawned.connect(_on_foe_spawned)
+	foe_spawner.initialize(furry_scene, screen_size, ground_sprite)
+
+	foe_manager = FoeManager.new()
+	add_child(foe_manager)
+	foe_manager.foe_added.connect(_on_foe_added)
+	foe_manager.initialize(screen_size)
+
 	collision_handler = CollisionHandler.new()
 	add_child(collision_handler)
 	collision_handler.player_hit_obstacle.connect(_on_player_hit_obstacle)
 	collision_handler.player_bounced_on_butterfly.connect(_on_player_bounced_on_butterfly)
+	collision_handler.player_jumped_on_foe.connect(_on_player_jumped_on_foe)
 	collision_handler.initialize($Player)
 
 func new_game():
@@ -97,6 +113,8 @@ func new_game():
 	butterfly_spawner.reset()
 	coin_spawner.reset()
 	coin_manager.reset()
+	foe_spawner.reset()
+	foe_manager.reset()
 
 	game_running = false
 	get_tree().paused = false
@@ -141,6 +159,11 @@ func _process(delta: float) -> void:
 		if coin:
 			coin_manager.add_coin(coin)
 
+		# Check foe spawning
+		var foe = foe_spawner.update(distance)
+		if foe:
+			foe_manager.add_foe(foe)
+
 		# Move player position & camera
 		$Player.position.x += speed
 		$Camera2D.position.x += speed
@@ -160,6 +183,8 @@ func _process(delta: float) -> void:
 		obstacle_manager.cleanup_off_screen_obstacles($Camera2D.position.x)
 		# Cleanup off-screen coins
 		coin_manager.cleanup_off_screen_coins($Camera2D.position.x)
+		# Cleanup off-screen foes
+		foe_manager.cleanup_off_screen_foes($Camera2D.position.x)
 
 		# Update score delta display timer
 		if score_delta_timer > 0.0:
@@ -228,6 +253,13 @@ func _on_coin_added(coin: Node):
 	# Coins handle their own collision detection, no need to connect signals
 	pass
 
+func _on_foe_spawned(foe: Node):
+	# Foe is already positioned by FoeSpawner
+	pass
+
+func _on_foe_added(foe: Node):
+	collision_handler.connect_obstacle_signals(foe)
+
 func _on_player_hit_obstacle(obstacle: Node):
 	game_over()
 
@@ -239,6 +271,18 @@ func _on_player_bounced_on_butterfly(obstacle: Node):
 	obstacle_manager.remove_obstacle(obstacle)
 	# Award 100 points for bouncing on a butterfly (100 * 100 = 10000 raw score)
 	score_manager.add_score(100 * 100, true)  # Show delta for bonus event
+
+func _on_player_jumped_on_foe(foe: Node):
+	# Player jumped on the foe from the top - bounce and destroy it
+	var bounce_velocity = -1200  # Slightly less than jump velocity for a nice bounce
+	$Player.velocity.y = bounce_velocity
+	if foe.has_method("destroy"):
+		foe.destroy()
+	# Remove from manager's list (but don't queue_free yet - let animation finish)
+	if foe_manager.foes.has(foe):
+		foe_manager.foes.erase(foe)
+	# Award 200 points for destroying a foe (200 * 100 = 20000 raw score)
+	score_manager.add_score(200 * 100, true)  # Show delta for bonus event
 
 func game_over():
 	score_manager.check_high_score()
