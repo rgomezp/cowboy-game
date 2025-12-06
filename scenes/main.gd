@@ -34,6 +34,10 @@ var game_running : bool
 var ground_height : int
 var distance : int = 0  # Track actual distance traveled, separate from score
 
+# Score delta display variables
+var score_delta_timer: float = 0.0
+var score_delta_color_white: bool = true  # Track color alternation
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	screen_size = get_window().size
@@ -43,6 +47,9 @@ func _ready() -> void:
 	# Initialize managers
 	setup_managers()
 
+	# Hide score delta label initially
+	$Hud.get_node("ScoreValueDelta").hide()
+
 	new_game()
 
 func setup_managers():
@@ -51,6 +58,7 @@ func setup_managers():
 	add_child(score_manager)
 	score_manager.score_updated.connect(_on_score_updated)
 	score_manager.high_score_updated.connect(_on_high_score_updated)
+	score_manager.score_delta.connect(_on_score_delta)
 
 	obstacle_manager = ObstacleManager.new()
 	add_child(obstacle_manager)
@@ -104,6 +112,11 @@ func new_game():
 	$Hud.get_node("StartLabel").show()
 	$GameOver.hide()
 
+	# Hide score delta label
+	var delta_label = $Hud.get_node("ScoreValueDelta")
+	delta_label.hide()
+	score_delta_timer = 0.0
+
 
 # Game logic happens here
 func _process(delta: float) -> void:
@@ -136,7 +149,8 @@ func _process(delta: float) -> void:
 		distance += int(speed)
 
 		# Update score (separate from distance)
-		score_manager.add_score(int(speed))
+		# Don't show delta for continuous movement score updates
+		score_manager.add_score(int(speed), false)
 
 		# Update ground position
 		if $Camera2D.position.x - $Ground.position.x > screen_size.x * 1.5:
@@ -146,6 +160,14 @@ func _process(delta: float) -> void:
 		obstacle_manager.cleanup_off_screen_obstacles($Camera2D.position.x)
 		# Cleanup off-screen coins
 		coin_manager.cleanup_off_screen_coins($Camera2D.position.x)
+
+		# Update score delta display timer
+		if score_delta_timer > 0.0:
+			score_delta_timer -= delta
+			if score_delta_timer <= 0.0:
+				# Hide label after 1 second
+				$Hud.get_node("ScoreValueDelta").hide()
+				score_delta_timer = 0.0
 	else:
 		if Input.is_action_pressed("ui_accept"):
 			game_running = true
@@ -157,6 +179,39 @@ func _on_score_updated(score: int):
 
 func _on_high_score_updated(high_score: int):
 	$Hud.get_node("HighScoreValue").text = str(score_manager.get_display_high_score())
+
+func _on_score_delta(delta: int):
+	# Convert raw score to display score (divide by SCORE_MODIFIER which is 100)
+	var display_delta = delta / 100
+
+	# Only show meaningful score changes (filter out 0)
+	if display_delta <= 0:
+		return
+
+	# Display the score delta for 1 second
+	var delta_label = $Hud.get_node("ScoreValueDelta")
+
+	# Format as +100, +10, etc.
+	delta_label.text = "+" + str(display_delta)
+
+	# If timer is already running (multiple events within 1 second), alternate color
+	if score_delta_timer > 0.0:
+		score_delta_color_white = not score_delta_color_white
+	else:
+		# First event, start with white
+		score_delta_color_white = true
+
+	# Reset timer to 1 second (extends display time if multiple events occur)
+	score_delta_timer = 1.0
+
+	# Set color (white or black)
+	if score_delta_color_white:
+		delta_label.modulate = Color.WHITE
+	else:
+		delta_label.modulate = Color.BLACK
+
+	# Show the label
+	delta_label.show()
 
 func _on_obstacle_added(obstacle: Node):
 	collision_handler.connect_obstacle_signals(obstacle)
@@ -183,7 +238,7 @@ func _on_player_bounced_on_butterfly(obstacle: Node):
 	obstacle.hide()
 	obstacle_manager.remove_obstacle(obstacle)
 	# Award 100 points for bouncing on a butterfly (100 * 100 = 10000 raw score)
-	score_manager.add_score(100 * 100)
+	score_manager.add_score(100 * 100, true)  # Show delta for bonus event
 
 func game_over():
 	score_manager.check_high_score()

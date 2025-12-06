@@ -44,7 +44,7 @@ func collect():
 
 	# Add 10 points to score (10 * 100 = 1000 raw score for display)
 	if "score_manager" in main_scene and main_scene.score_manager:
-		main_scene.score_manager.add_score(10 * 100)
+		main_scene.score_manager.add_score(10 * 100, true)  # Show delta for bonus event
 
 	# Trigger the collected animation and wait for it to finish
 	var animated_sprite = $AnimatedSprite2D
