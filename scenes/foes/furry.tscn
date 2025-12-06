@@ -1,0 +1,101 @@
+[gd_scene load_steps=14 format=3 uid="uid://cp5l1kgkw6jla"]
+
+[ext_resource type="Texture2D" uid="uid://247a0xmccjof" path="res://assets/img/foes/furry/furry_sprite_sheet.png" id="1_4f5cd"]
+[ext_resource type="Texture2D" uid="uid://b14pnms1ut13o" path="res://assets/img/foes/furry/furry_destroy_sprite_sheet.png" id="2_oj4mi"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_oj4mi"]
+atlas = ExtResource("1_4f5cd")
+region = Rect2(0, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vbg7f"]
+atlas = ExtResource("1_4f5cd")
+region = Rect2(96, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dgsqq"]
+atlas = ExtResource("1_4f5cd")
+region = Rect2(192, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gorpv"]
+atlas = ExtResource("1_4f5cd")
+region = Rect2(288, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ktwym"]
+atlas = ExtResource("2_oj4mi")
+region = Rect2(0, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bjglj"]
+atlas = ExtResource("2_oj4mi")
+region = Rect2(96, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dk2h7"]
+atlas = ExtResource("2_oj4mi")
+region = Rect2(192, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_snmob"]
+atlas = ExtResource("2_oj4mi")
+region = Rect2(288, 0, 96, 96)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ktwym"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_oj4mi")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vbg7f")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dgsqq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gorpv")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ktwym")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bjglj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dk2h7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_snmob")
+}],
+"loop": false,
+"name": &"destroy",
+"speed": 10.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bjglj"]
+size = Vector2(89, 245)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_dk2h7"]
+size = Vector2(85, 8)
+
+[node name="Furry" type="Area2D"]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(159, 165)
+scale = Vector2(3, 3)
+sprite_frames = SubResource("SpriteFrames_ktwym")
+animation = &"destroy"
+autoplay = "default"
+frame = 3
+frame_progress = 1.0
+
+[node name="CollisionBox" type="CollisionShape2D" parent="."]
+position = Vector2(153, 175)
+shape = SubResource("RectangleShape2D_bjglj")
+
+[node name="CollisionBoxTop" type="CollisionShape2D" parent="."]
+position = Vector2(155.5, 48)
+shape = SubResource("RectangleShape2D_dk2h7")
+
+[node name="CollisionBoxBottom" type="CollisionShape2D" parent="."]
