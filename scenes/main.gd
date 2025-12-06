@@ -275,6 +275,11 @@ func _on_player_bounced_on_butterfly(obstacle: Node):
 func _on_player_jumped_on_foe(foe: Node):
 	# Player jumped on the foe from the top - bounce and destroy it
 	var bounce_velocity = -1200  # Slightly less than jump velocity for a nice bounce
+	# Ensure player is slightly above the foe to prevent being stuck
+	if foe and is_instance_valid(foe):
+		var foe_top = foe.position.y - 50  # Approximate top of foe
+		if $Player.position.y >= foe_top:
+			$Player.position.y = foe_top - 5
 	$Player.velocity.y = bounce_velocity
 	if foe.has_method("destroy"):
 		foe.destroy()
