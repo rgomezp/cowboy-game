@@ -15,11 +15,12 @@ const PLAYER_START_POS := Vector2i(19, 166)
 const CAMERA_START_POS := Vector2i(540, 960)
 
 var score : int
+var high_score : int
 var SCORE_MODIFIER : int = 100
 var speed : float
 const START_SPEED : float = 10.0
-const SPEED_MODIFIER : int = 5000
-const MAX_SPEED : int = 20
+const SPEED_MODIFIER : int = 10_000
+const MAX_SPEED : int = 15
 var screen_size : Vector2i
 var game_running : bool
 var ground_height : int
@@ -30,6 +31,7 @@ var next_butterfly_interval : float = 0.0
 func _ready() -> void:
 	screen_size = get_window().size	# see how far we've scrolled
 	ground_height = $Ground.get_node("Sprite2D").texture.get_height()
+	$GameOver.get_node("Button").pressed.connect(new_game)
 	new_game()
 
 func new_game():
@@ -40,6 +42,12 @@ func new_game():
 	next_butterfly_interval = randf_range(1.0, 5.0)
 	show_score()
 	game_running = false
+	get_tree().paused = false
+	
+	# delete all obstacles
+	for obs in obstacles:
+		obs.queue_free()
+	obstacles.clear()
 
 	# reset the nodes
 	$Player.position = PLAYER_START_POS
@@ -47,8 +55,9 @@ func new_game():
 	$Camera2D.position = CAMERA_START_POS
 	$Ground.position = Vector2i(0, 0)
 
-	#reset hud
+	#reset hud and game over scene
 	$Hud.get_node("StartLabel").show()
+	$GameOver.hide()
 
 
 # Game logic happens here
@@ -73,6 +82,10 @@ func _process(delta: float) -> void:
 		# update ground position
 		if $Camera2D.position.x - $Ground.position.x > screen_size.x * 1.5:
 			$Ground.position.x += screen_size.x
+
+		for obs in obstacles:
+			if obs.position.x < ($Camera2D.position.x - screen_size.x):
+				remove_obs
 	else:
 		if Input.is_action_pressed("ui_accept"):
 			game_running = true
@@ -80,6 +93,11 @@ func _process(delta: float) -> void:
 
 func show_score():
 	$Hud.get_node("ScoreValue").text = str(score / SCORE_MODIFIER)
+
+func check_high_score():
+	if score > high_score:
+		high_score = score
+	$Hud.get_node("HighScoreValue").text = str(high_score / SCORE_MODIFIER)
 
 func generate_obs():
 	var should_generate = false
@@ -128,11 +146,26 @@ func check_butterfly_spawn(delta: float):
 		add_obs(obs, obs_x, obs_y)
 		# Reset timer and set next random interval
 		last_butterfly_time = 0.0
-		next_butterfly_interval = randf_range(5.0, 5.0)
+		next_butterfly_interval = randf_range(5.0, 15.0)
 
 
 func add_obs(obs, x, y):
 		last_obstacle = obs
 		obs.position = Vector2i(x, y)
+		obs.body_entered.connect(hit_obs)
 		add_child(obs)
 		obstacles.append(obs)
+
+func remove_obs(obs):
+	obs.queue_free()
+	obstacles.erase(obs)
+
+func hit_obs(body):
+	if body.name == "Player":
+		game_over()
+		
+func game_over():
+	check_high_score()
+	get_tree().paused = true
+	game_running = false
+	$GameOver.show()
