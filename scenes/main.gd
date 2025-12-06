@@ -22,7 +22,7 @@ const CAMERA_START_POS := Vector2i(540, 960)
 
 var speed : float
 const START_SPEED : float = 10.0
-const SPEED_MODIFIER : int = 10_000
+const SPEED_MODIFIER : int = 20_000
 const MAX_SPEED : int = 15
 var screen_size : Vector2i
 var game_running : bool
