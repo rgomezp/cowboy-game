@@ -172,7 +172,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"sliding",
-"speed": 3.0
+"speed": 10.0
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mdl7e"]
@@ -190,9 +190,9 @@ script = ExtResource("1_qu4a1")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(22.571428, 169)
 sprite_frames = SubResource("SpriteFrames_qlg0r")
-animation = &"gliding"
+animation = &"sliding"
 autoplay = "idle"
-frame_progress = 0.7708032
+frame_progress = 0.9399254
 
 [node name="RunCollisionShape" type="CollisionShape2D" parent="."]
 position = Vector2(22.357138, 169.49992)
