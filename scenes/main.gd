@@ -274,20 +274,28 @@ func _on_player_bounced_on_butterfly(obstacle: Node):
 
 func _on_player_jumped_on_foe(foe: Node):
 	# Player jumped on the foe from the top - bounce and destroy it
-	var bounce_velocity = -1200  # Slightly less than jump velocity for a nice bounce
-	# Ensure player is slightly above the foe to prevent being stuck
+	# Immediately disable the main collision to prevent game over from side collision
 	if foe and is_instance_valid(foe):
+		# Disable main collision immediately
+		if foe.has_node("CollisionBox"):
+			foe.get_node("CollisionBox").disabled = true
+		# Disable main Area2D monitoring immediately
+		foe.monitoring = false
+		foe.monitorable = false
+		
+		var bounce_velocity = -1200  # Slightly less than jump velocity for a nice bounce
+		# Ensure player is slightly above the foe to prevent being stuck
 		var foe_top = foe.position.y - 50  # Approximate top of foe
 		if $Player.position.y >= foe_top:
 			$Player.position.y = foe_top - 5
-	$Player.velocity.y = bounce_velocity
-	if foe.has_method("destroy"):
-		foe.destroy()
-	# Remove from manager's list (but don't queue_free yet - let animation finish)
-	if foe_manager.foes.has(foe):
-		foe_manager.foes.erase(foe)
-	# Award 200 points for destroying a foe (200 * 100 = 20000 raw score)
-	score_manager.add_score(200 * 100, true)  # Show delta for bonus event
+		$Player.velocity.y = bounce_velocity
+		if foe.has_method("destroy"):
+			foe.destroy()
+		# Remove from manager's list (but don't queue_free yet - let animation finish)
+		if foe_manager.foes.has(foe):
+			foe_manager.foes.erase(foe)
+		# Award 200 points for destroying a foe (200 * 100 = 20000 raw score)
+		score_manager.add_score(200 * 100, true)  # Show delta for bonus event
 
 func game_over():
 	score_manager.check_high_score()

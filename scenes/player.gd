@@ -2,14 +2,19 @@ extends CharacterBody2D
 
 
 const GRAVITY : int = 4200
+const GLIDE_GRAVITY : int = 1200
 const JUMP_VELOCITY = -1800
+const DOUBLE_JUMP_VELOCITY = -1000
 
 var is_sliding: bool = false
 var sliding_timer: float = 0.0
+var has_double_jumped: bool = false
 
 
 func _physics_process(delta: float) -> void:
-	velocity.y += GRAVITY * delta
+	# Use glide gravity if double jump has been used, otherwise use normal gravity
+	var current_gravity = GLIDE_GRAVITY if has_double_jumped else GRAVITY
+	velocity.y += current_gravity * delta
 
 	# Update sliding timer
 	if is_sliding:
@@ -22,6 +27,8 @@ func _physics_process(delta: float) -> void:
 			$RunCollisionShape.disabled = false
 
 	if is_on_floor():
+		# Reset double jump when touching the ground
+		has_double_jumped = false
 		if not get_parent().game_running:
 			$AnimatedSprite2D.play("idle")
 		else:
@@ -39,6 +46,10 @@ func _physics_process(delta: float) -> void:
 				$AnimatedSprite2D.play("running")
 				$RunCollisionShape.disabled = false
 	else:
+		# Allow double jump while in the air
+		if Input.is_action_just_pressed("ui_accept") and not has_double_jumped:
+			velocity.y = DOUBLE_JUMP_VELOCITY
+			has_double_jumped = true
 		$AnimatedSprite2D.play("jumping")
 
 	move_and_slide()

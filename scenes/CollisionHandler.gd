@@ -17,6 +17,12 @@ func handle_obstacle_collision(body: Node, obstacle: Node):
 		if obstacle.name == "Coin" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and "coin.gd" in obstacle.get_script().resource_path):
 			return
 		
+		# If this is a foe, check if it's already being destroyed
+		var is_foe = obstacle.name == "Furry" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and "furry.gd" in obstacle.get_script().resource_path)
+		if is_foe and obstacle.has_method("is_destroyed") and obstacle.is_destroyed:
+			# Foe is already being destroyed, ignore this collision
+			return
+		
 		# If this is a butterfly, check if player is also overlapping the top collision
 		if obstacle.has_node("TopCollision"):
 			var top_collision = obstacle.get_node("TopCollision")
