@@ -25,7 +25,7 @@ func _process(delta: float) -> void:
 		var tree = get_tree()
 		if tree:
 			main_scene = tree.current_scene
-	
+
 	# Get current camera position
 	var camera_x = 0.0
 	if main_scene and main_scene.has_node("Camera2D"):

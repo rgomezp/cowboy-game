@@ -27,7 +27,7 @@ func clear_all_obstacles():
 func should_generate_obstacle(current_distance: int) -> bool:
 	if obstacles.is_empty():
 		return true
-	
+
 	var distance_since_last = current_distance - last_obstacle_distance
 	var min_spacing = randi_range(4000, 7000)
 	var max_spacing = randi_range(10000, 20000)
@@ -45,28 +45,28 @@ func generate_obstacle(current_distance: int) -> Node:
 		return null
 	if not should_generate_obstacle(current_distance):
 		return null
-	
+
 	var obs_type = obstacle_types[randi() % obstacle_types.size()]
 	var obs = obs_type.instantiate()
-	
+
 	var obs_sprite = obs.get_node("Sprite2D")
 	var obs_height = obs_sprite.texture.get_height()
 	var obs_scale = obs_sprite.scale
 	var obs_sprite_offset = obs_sprite.position
-	
+
 	var ground_top_y = ground_sprite.offset.y
-	
+
 	# Add some randomness to the x position
 	var base_x = screen_size.x + current_distance + 100
 	var random_offset = randi_range(-50, 50)
 	var obs_x: int = base_x + random_offset
-	
+
 	# Position obstacle so its bottom edge sits on top of the ground
 	var obs_y: int = ground_top_y - obs_sprite_offset.y - (obs_height * obs_scale.y / 2) + 10
-	
+
 	# Set position on obstacle
 	obs.position = Vector2i(obs_x, obs_y)
-	
+
 	last_obstacle_distance = current_distance
 	return obs
 

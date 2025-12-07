@@ -20,8 +20,8 @@ func _on_body_entered(body: Node):
 
 	# Immediately mark as collected and disable collisions to prevent double collection
 	is_collected = true
-	monitoring = false
-	monitorable = false
+	set_deferred("monitoring", false)
+	set_deferred("monitorable", false)
 	# Disconnect signal to prevent multiple triggers
 	if body_entered.is_connected(_on_body_entered):
 		body_entered.disconnect(_on_body_entered)
@@ -34,8 +34,8 @@ func collect():
 
 	# Mark as collected immediately (already done in _on_body_entered, but ensure it)
 	is_collected = true
-	monitoring = false
-	monitorable = false
+	set_deferred("monitoring", false)
+	set_deferred("monitorable", false)
 
 	# Get the main scene to access managers
 	var main_scene = get_tree().current_scene
