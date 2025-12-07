@@ -9,7 +9,7 @@ func _ready() -> void:
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	var main_scene = get_tree().current_scene
 	if main_scene and "speed" in main_scene:
 		# Move the parent Area2D instead of just the sprite

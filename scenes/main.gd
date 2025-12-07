@@ -162,7 +162,7 @@ func new_game():
 func _process(delta: float) -> void:
 	if game_running:
 		# Calculate speed based on distance traveled, not score
-		speed = START_SPEED + distance / SPEED_MODIFIER
+		speed = START_SPEED + distance / float(SPEED_MODIFIER)
 		if speed > MAX_SPEED:
 			speed = MAX_SPEED
 
@@ -224,15 +224,15 @@ func _process(delta: float) -> void:
 			$Hud.get_node("StartLabel").hide()
 
 # Signal handlers
-func _on_score_updated(score: int):
+func _on_score_updated(_score: int):
 	$Hud.get_node("ScoreValue").text = str(score_manager.get_display_score())
 
-func _on_high_score_updated(high_score: int):
+func _on_high_score_updated(_high_score: int):
 	$Hud.get_node("HighScoreValue").text = str(score_manager.get_display_high_score())
 
 func _on_score_delta(delta: int):
 	# Convert raw score to display score (divide by SCORE_MODIFIER which is 100)
-	var display_delta = delta / 100
+	var display_delta = int(float(delta) / 100.0)
 
 	# Only show meaningful score changes (filter out 0)
 	if display_delta == 0:
@@ -269,26 +269,26 @@ func _on_score_delta(delta: int):
 func _on_obstacle_added(obstacle: Node):
 	collision_handler.connect_obstacle_signals(obstacle)
 
-func _on_butterfly_spawned(butterfly: Node):
+func _on_butterfly_spawned(_butterfly: Node):
 	# Butterfly is already positioned by ButterflySpawner
 	pass
 
-func _on_coin_spawned(coin: Node):
+func _on_coin_spawned(_coin: Node):
 	# Coin is already positioned by CoinSpawner
 	pass
 
-func _on_coin_added(coin: Node):
+func _on_coin_added(_coin: Node):
 	# Coins handle their own collision detection, no need to connect signals
 	pass
 
-func _on_foe_spawned(foe: Node):
+func _on_foe_spawned(_foe: Node):
 	# Foe is already positioned by FoeSpawner
 	pass
 
 func _on_foe_added(foe: Node):
 	collision_handler.connect_obstacle_signals(foe)
 
-func _on_player_hit_obstacle(obstacle: Node):
+func _on_player_hit_obstacle(_obstacle: Node):
 	game_over()
 
 func _on_player_bounced_on_butterfly(obstacle: Node):
