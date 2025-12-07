@@ -7,8 +7,8 @@
 [ext_resource type="PackedScene" uid="uid://b5p5uoo5ric43" path="res://scenes/player.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://cqrgcmewur2n5" path="res://scenes/HUD.tscn" id="5_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://c5rba73xh0cs3" path="res://scenes/game_over.tscn" id="6_tefeu"]
-[ext_resource type="PackedScene" uid="uid://dak0m3n5p7tat" path="res://scenes/special_event_buttons.tscn" id="7_buttons"]
-[ext_resource type="PackedScene" uid="uid://b3k4m5n6p7q8r" path="res://scenes/special_event_hud.tscn" id="8_hud"]
+[ext_resource type="PackedScene" uid="uid://dyu21k2bbgc75" path="res://scenes/special_event_buttons.tscn" id="7_buttons"]
+[ext_resource type="PackedScene" uid="uid://csa2shhjoqkjt" path="res://scenes/special_event_hud.tscn" id="8_hud"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_jyhfs")
