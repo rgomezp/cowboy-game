@@ -342,14 +342,12 @@ func set_all_spawning_enabled(enabled: bool):
 
 func _on_special_event_started():
 	# Disable obstacles, foes, and butterflies (keep coins enabled)
-	print("[Main] Special event started - disabling obstacles, foes, and butterflies")
 	set_obstacle_spawning_enabled(false)
 	set_foe_spawning_enabled(false)
 	set_butterfly_spawning_enabled(false)
 
 func _on_special_event_ended():
 	# Re-enable all spawners
-	print("[Main] Special event ended - re-enabling all spawners")
 	set_obstacle_spawning_enabled(true)
 	set_foe_spawning_enabled(true)
 	set_butterfly_spawning_enabled(true)
