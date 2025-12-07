@@ -6,6 +6,7 @@ signal special_event_ended()
 var special_scenes: Array[PackedScene] = []
 var screen_size: Vector2i
 var ground_sprite: Sprite2D
+var special_ground: Node  # Reference to the special ground node
 
 # Timing variables
 var time_since_last_event: float = 0.0
@@ -19,10 +20,11 @@ const PREPARE_DURATION: float = 5.0  # 5 seconds with only coins
 
 var current_special: Node2D = null
 
-func initialize(special_scenes: Array[PackedScene], screen_size: Vector2i, ground_sprite: Sprite2D):
+func initialize(special_scenes: Array[PackedScene], screen_size: Vector2i, ground_sprite: Sprite2D, special_ground: Node):
 	self.special_scenes = special_scenes
 	self.screen_size = screen_size
 	self.ground_sprite = ground_sprite
+	self.special_ground = special_ground
 	schedule_next_event()
 
 func reset():
@@ -97,11 +99,9 @@ func spawn_special(current_speed: float, camera_x: float):
 	var spawn_x = camera_x + screen_size.x + 100
 
 	current_special.position = Vector2(spawn_x, spawn_y)
-	# Set z_index lower than ground so flags appear behind it
-	current_special.z_index = -1
 
-	# Add to scene tree first so get_tree() works
-	add_child(current_special)
+	# Add to special ground node (which is behind main ground in scene hierarchy)
+	special_ground.add_child(current_special)
 
 	# Initialize the special flag script if it exists (after adding to tree)
 	if current_special.has_method("initialize"):

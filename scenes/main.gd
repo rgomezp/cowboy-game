@@ -118,7 +118,7 @@ func setup_managers():
 	special_event_manager.special_event_started.connect(_on_special_event_started)
 	special_event_manager.special_event_ended.connect(_on_special_event_ended)
 	var special_types: Array[PackedScene] = [texas_flag_scene, us_flag_scene]
-	special_event_manager.initialize(special_types, screen_size, ground_sprite)
+	special_event_manager.initialize(special_types, screen_size, ground_sprite, $SpecialGround)
 
 func new_game():
 	# Reset managers
