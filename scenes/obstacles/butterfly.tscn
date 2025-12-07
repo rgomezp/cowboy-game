@@ -74,10 +74,10 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_7cej6"]
-size = Vector2(85, 111)
+size = Vector2(96.5, 83)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_23sqe"]
-size = Vector2(78.5, 7)
+size = Vector2(78.5, 35.5)
 
 [node name="Butterfly" type="Area2D"]
 
@@ -87,17 +87,16 @@ position = Vector2(1000, 879)
 scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_4x44w")
 autoplay = "default"
-frame = 2
-frame_progress = 0.8715116
+frame_progress = 0.44515875
 script = ExtResource("2_lknyk")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(975.5, 871.5)
+position = Vector2(969.75, 886)
 shape = SubResource("RectangleShape2D_7cej6")
 
 [node name="TopCollision" type="Area2D" parent="."]
 position = Vector2(970, 821)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TopCollision"]
-position = Vector2(4.25, -9)
+position = Vector2(4.25, 5.25)
 shape = SubResource("RectangleShape2D_23sqe")
