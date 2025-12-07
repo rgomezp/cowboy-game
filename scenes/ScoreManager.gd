@@ -14,6 +14,9 @@ func reset():
 
 func add_score(amount: int, show_delta: bool = false):
 	score += amount
+	# Ensure score never goes below 0
+	if score < 0:
+		score = 0
 	score_updated.emit(score)
 	# Only emit the delta signal if explicitly requested (for bonus events)
 	if show_delta:

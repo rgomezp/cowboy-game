@@ -1,0 +1,24 @@
+[gd_scene load_steps=3 format=3 uid="uid://csa2shhjoqkjt"]
+
+[ext_resource type="FontFile" uid="uid://bbd3nccrf57vt" path="res://assets/fonts/retro.ttf" id="1_font"]
+[ext_resource type="Script" uid="uid://cvyr6dslmg4d5" path="res://scenes/special_event_hud.gd" id="2_script"]
+
+[node name="SpecialEventHud" type="CanvasLayer"]
+script = ExtResource("2_script")
+
+[node name="EventLabel" type="Label" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -201.0
+offset_top = -331.0
+offset_right = 199.0
+offset_bottom = -250.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 70
+text = "SPECIAL EVENT"
+horizontal_alignment = 1

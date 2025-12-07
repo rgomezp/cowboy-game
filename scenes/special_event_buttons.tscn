@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3 uid="uid://dyu21k2bbgc75"]
+
+[ext_resource type="FontFile" uid="uid://bbd3nccrf57vt" path="res://assets/fonts/retro.ttf" id="1_font"]
+[ext_resource type="Script" uid="uid://dvyb04hpth1wf" path="res://scenes/special_event_buttons.gd" id="2_script"]
+
+[node name="SpecialEventButtons" type="CanvasLayer"]
+script = ExtResource("2_script")
+
+[node name="MakesSenseButton" type="Button" parent="."]
+offset_left = 724.0
+offset_top = 1350.0
+offset_right = 924.0
+offset_bottom = 1550.0
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 50
+text = "Makes
+sense"
+
+[node name="HwwatButton" type="Button" parent="."]
+offset_left = 724.0
+offset_top = 1597.0
+offset_right = 924.0
+offset_bottom = 1797.0
+theme_override_fonts/font = ExtResource("1_font")
+theme_override_font_sizes/font_size = 50
+text = "Hwwat?"
+
+[connection signal="pressed" from="MakesSenseButton" to="." method="_on_makes_sense_button_pressed"]
+[connection signal="pressed" from="HwwatButton" to="." method="_on_hwwat_button_pressed"]

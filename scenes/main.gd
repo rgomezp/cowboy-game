@@ -49,6 +49,9 @@ var distance : int = 0  # Track actual distance traveled, separate from score
 var score_delta_timer: float = 0.0
 var score_delta_color_white: bool = true  # Track color alternation
 
+# Special event button result tracking
+var special_button_result: String = ""  # "correct", "wrong", or "" (not pressed)
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	screen_size = get_window().size
@@ -118,7 +121,11 @@ func setup_managers():
 	special_event_manager.special_event_started.connect(_on_special_event_started)
 	special_event_manager.special_event_ended.connect(_on_special_event_ended)
 	var special_types: Array[PackedScene] = [texas_flag_scene, us_flag_scene]
-	special_event_manager.initialize(special_types, screen_size, ground_sprite, $SpecialGround)
+	special_event_manager.initialize(special_types, screen_size, ground_sprite, $SpecialGround, $SpecialEventButtons)
+	
+	# Connect button signals
+	$SpecialEventButtons.button_pressed.connect(_on_special_button_pressed)
+	$SpecialEventButtons.buttons_hidden.connect(_on_special_buttons_hidden)
 
 func new_game():
 	# Reset managers
@@ -228,14 +235,17 @@ func _on_score_delta(delta: int):
 	var display_delta = delta / 100
 
 	# Only show meaningful score changes (filter out 0)
-	if display_delta <= 0:
+	if display_delta == 0:
 		return
 
 	# Display the score delta for 1 second
 	var delta_label = $Hud.get_node("ScoreValueDelta")
 
-	# Format as +100, +10, etc.
-	delta_label.text = "+" + str(display_delta)
+	# Format as +100, +10, -500, etc. (negative values already have minus sign)
+	if display_delta > 0:
+		delta_label.text = "+" + str(display_delta)
+	else:
+		delta_label.text = str(display_delta)  # Negative values already have minus sign
 
 	# If timer is already running (multiple events within 1 second), alternate color
 	if score_delta_timer > 0.0:
@@ -345,9 +355,63 @@ func _on_special_event_started():
 	set_obstacle_spawning_enabled(false)
 	set_foe_spawning_enabled(false)
 	set_butterfly_spawning_enabled(false)
+	
+	# Show "Special Event!" message
+	$SpecialEventHud.show_special_event()
+	
+	# Reset button result tracking
+	special_button_result = ""
 
 func _on_special_event_ended():
 	# Re-enable all spawners
 	set_obstacle_spawning_enabled(true)
 	set_foe_spawning_enabled(true)
 	set_butterfly_spawning_enabled(true)
+
+func _on_special_button_pressed(is_good: bool):
+	# Only process button presses if sprite has entered view
+	# This prevents scoring when buttons are pressed before the sprite is visible
+	var buttons_ui = $SpecialEventButtons
+	if not buttons_ui or not buttons_ui.has_sprite_entered_view():
+		# Sprite hasn't entered view yet - buttons already hidden by button handler
+		# Show "Too Early!" message
+		$SpecialEventHud.show_outcome("too_early")
+		return
+	
+	# Player pressed a button - check if they got it right
+	var special_path = special_event_manager.get_current_special_scene_path()
+	if special_path.is_empty():
+		# No sprite path available yet - don't score
+		return
+	
+	var is_actually_good = SpecialSpriteData.is_good_sprite(special_path)
+	
+	if is_good == is_actually_good:
+		# Correct answer - award 500 points (500 * 100 = 50000 raw score)
+		score_manager.add_score(500 * 100, true)  # Show delta for bonus event
+		special_button_result = "correct"
+	else:
+		# Wrong answer - deduct 500 points (500 * 100 = 50000 raw score)
+		score_manager.add_score(-500 * 100, true)  # Show delta for penalty
+		special_button_result = "wrong"
+	
+	# Buttons are already hidden by the button press handler (which sets force_hide = true)
+
+func _on_special_buttons_hidden(was_pressed: bool, too_early: bool):
+	# Show outcome message when buttons are hidden
+	if too_early:
+		# Button was pressed too early - already handled in _on_special_button_pressed
+		return
+	
+	if was_pressed:
+		# Button was pressed - show result based on whether it was correct or wrong
+		if special_button_result == "correct":
+			$SpecialEventHud.show_outcome("nice")
+		elif special_button_result == "wrong":
+			$SpecialEventHud.show_outcome("oops")
+		else:
+			# Button was pressed but result wasn't set (shouldn't happen, but handle gracefully)
+			$SpecialEventHud.show_outcome("miss")
+	else:
+		# No button was pressed - show "Miss"
+		$SpecialEventHud.show_outcome("miss")

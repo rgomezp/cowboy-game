@@ -1,8 +1,11 @@
 extends Node2D
 
+signal entered_camera_view()
+
 var screen_size: Vector2i
 var main_scene: Node = null
 var initial_camera_x: float = 0.0  # Track camera position when flag was spawned
+var has_entered_view: bool = false  # Track if we've already emitted the signal
 
 const GROUND_LEVEL_Y: float = 1280.0  # Ground level y coordinate
 
@@ -35,6 +38,11 @@ func _process(delta: float) -> void:
 	var flag_delta = camera_delta * 0.3  # Flag moves 30% of camera movement
 	var spawn_offset = screen_size.x + 100  # Original spawn offset
 	position.x = initial_camera_x + spawn_offset + flag_delta
+
+	# Check if flag has entered camera view (right edge of screen)
+	if not has_entered_view and position.x <= camera_x + screen_size.x:
+		has_entered_view = true
+		entered_camera_view.emit()
 
 	# Check if off-screen and remove
 	var cleanup_threshold = camera_x - screen_size.x * 2
