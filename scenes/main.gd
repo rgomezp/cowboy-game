@@ -8,6 +8,8 @@ var butterfly_scene = preload("res://scenes/obstacles/butterfly.tscn")
 var coin_scene = preload("res://scenes/items/Coin.tscn")
 var furry_scene = preload("res://scenes/foes/furry/furry.tscn")
 var troll_scene = preload("res://scenes/foes/troll/troll.tscn")
+var texas_flag_scene = preload("res://scenes/specials/texas_flag.tscn")
+var us_flag_scene = preload("res://scenes/specials/us_flag.tscn")
 
 # Preload manager scripts
 var ScoreManager = preload("res://scenes/ScoreManager.gd")
@@ -18,6 +20,7 @@ var CoinManager = preload("res://scenes/CoinManager.gd")
 var FoeSpawner = preload("res://scenes/FoeSpawner.gd")
 var FoeManager = preload("res://scenes/FoeManager.gd")
 var CollisionHandler = preload("res://scenes/CollisionHandler.gd")
+var SpecialEventManager = preload("res://scenes/SpecialEventManager.gd")
 
 # Manager instances
 var score_manager: Node
@@ -28,6 +31,7 @@ var coin_manager: Node
 var foe_spawner: Node
 var foe_manager: Node
 var collision_handler: Node
+var special_event_manager: Node
 
 const PLAYER_START_POS := Vector2i(19, 166)
 const CAMERA_START_POS := Vector2i(540, 960)
@@ -109,6 +113,13 @@ func setup_managers():
 	collision_handler.player_jumped_on_foe.connect(_on_player_jumped_on_foe)
 	collision_handler.initialize($Player)
 
+	special_event_manager = SpecialEventManager.new()
+	add_child(special_event_manager)
+	special_event_manager.special_event_started.connect(_on_special_event_started)
+	special_event_manager.special_event_ended.connect(_on_special_event_ended)
+	var special_types: Array[PackedScene] = [texas_flag_scene, us_flag_scene]
+	special_event_manager.initialize(special_types, screen_size, ground_sprite)
+
 func new_game():
 	# Reset managers
 	score_manager.reset()
@@ -118,6 +129,7 @@ func new_game():
 	coin_manager.reset()
 	foe_spawner.reset()
 	foe_manager.reset()
+	special_event_manager.reset()
 
 	game_running = false
 	get_tree().paused = false
@@ -188,6 +200,9 @@ func _process(delta: float) -> void:
 		coin_manager.cleanup_off_screen_coins($Camera2D.position.x)
 		# Cleanup off-screen foes
 		foe_manager.cleanup_off_screen_foes($Camera2D.position.x)
+
+		# Update special event manager
+		special_event_manager.update(delta, speed, $Camera2D.position.x)
 
 		# Update score delta display timer
 		if score_delta_timer > 0.0:
@@ -324,3 +339,17 @@ func set_all_spawning_enabled(enabled: bool):
 	set_foe_spawning_enabled(enabled)
 	set_coin_spawning_enabled(enabled)
 	set_butterfly_spawning_enabled(enabled)
+
+func _on_special_event_started():
+	# Disable obstacles, foes, and butterflies (keep coins enabled)
+	print("[Main] Special event started - disabling obstacles, foes, and butterflies")
+	set_obstacle_spawning_enabled(false)
+	set_foe_spawning_enabled(false)
+	set_butterfly_spawning_enabled(false)
+
+func _on_special_event_ended():
+	# Re-enable all spawners
+	print("[Main] Special event ended - re-enabling all spawners")
+	set_obstacle_spawning_enabled(true)
+	set_foe_spawning_enabled(true)
+	set_butterfly_spawning_enabled(true)

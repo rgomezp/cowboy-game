@@ -14,3 +14,4 @@ texture = ExtResource("1_tnt")
 position = Vector2(341, 262)
 scale = Vector2(3.5, 3.5)
 polygon = PackedVector2Array(-5.714287, -10.571426, 24, -11.142857, 24, 17.714287, -5.4285736, 17.714287)
+
