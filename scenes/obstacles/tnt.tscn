@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://d4dx0psgprbgy"]
+
+[ext_resource type="Texture2D" uid="uid://cjnewp7c0hb37" path="res://assets/img/obstacles/tnt.png" id="1_tnt"]
+
+[node name="TNT" type="Area2D"]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(370.99997, 266.99997)
+scale = Vector2(3.5, 3.5)
+texture = ExtResource("1_tnt")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+position = Vector2(341, 262)
+scale = Vector2(3.5, 3.5)
+polygon = PackedVector2Array(-5.714287, -10.571426, 24, -11.142857, 24, 17.714287, -5.4285736, 17.714287)

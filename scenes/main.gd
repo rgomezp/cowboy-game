@@ -3,6 +3,7 @@ extends Node
 # Preload obstacles
 var rock_scene = preload("res://scenes/obstacles/rock.tscn")
 var agave_scene = preload("res://scenes/obstacles/agave.tscn")
+var tnt_scene = preload("res://scenes/obstacles/tnt.tscn")
 var butterfly_scene = preload("res://scenes/obstacles/butterfly.tscn")
 var coin_scene = preload("res://scenes/items/Coin.tscn")
 var furry_scene = preload("res://scenes/foes/furry/furry.tscn")
@@ -70,7 +71,7 @@ func setup_managers():
 	add_child(obstacle_manager)
 	obstacle_manager.obstacle_added.connect(_on_obstacle_added)
 
-	var obstacle_types: Array[PackedScene] = [rock_scene, agave_scene]
+	var obstacle_types: Array[PackedScene] = [rock_scene, agave_scene, tnt_scene]
 	var ground_sprite = $Ground.get_node("Sprite2D")
 	obstacle_manager.initialize(obstacle_types, screen_size, ground_sprite)
 
