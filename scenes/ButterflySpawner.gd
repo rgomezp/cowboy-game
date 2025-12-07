@@ -7,6 +7,7 @@ var butterfly_heights: Array[int] = [150, -300]
 var last_butterfly_time: float = 0.0
 var next_butterfly_interval: float = 0.0
 var screen_size: Vector2i
+var spawning_enabled: bool = true  # Can be disabled for special events
 
 func initialize(butterfly_scene: PackedScene, screen_size: Vector2i):
 	self.butterfly_scene = butterfly_scene
@@ -16,7 +17,15 @@ func reset():
 	last_butterfly_time = 0.0
 	next_butterfly_interval = randf_range(1.0, 5.0)
 
+func set_spawning_enabled(enabled: bool):
+	spawning_enabled = enabled
+
+func is_spawning_enabled() -> bool:
+	return spawning_enabled
+
 func update(delta: float, current_distance: int) -> Node:
+	if not spawning_enabled:
+		return null
 	last_butterfly_time += delta
 	if last_butterfly_time >= next_butterfly_interval:
 		var butterfly = spawn_butterfly(current_distance)

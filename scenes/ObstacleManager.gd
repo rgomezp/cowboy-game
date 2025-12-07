@@ -8,6 +8,7 @@ var obstacles: Array = []
 var last_obstacle_distance: int = 0  # Track distance, not score
 var screen_size: Vector2i
 var ground_sprite: Sprite2D
+var spawning_enabled: bool = true  # Can be disabled for special events
 
 func initialize(obstacle_scenes: Array[PackedScene], screen_size: Vector2i, ground_sprite: Sprite2D):
 	obstacle_types = obstacle_scenes
@@ -33,7 +34,15 @@ func should_generate_obstacle(current_distance: int) -> bool:
 	var required_spacing = randi_range(min_spacing, max_spacing)
 	return distance_since_last >= required_spacing
 
+func set_spawning_enabled(enabled: bool):
+	spawning_enabled = enabled
+
+func is_spawning_enabled() -> bool:
+	return spawning_enabled
+
 func generate_obstacle(current_distance: int) -> Node:
+	if not spawning_enabled:
+		return null
 	if not should_generate_obstacle(current_distance):
 		return null
 	

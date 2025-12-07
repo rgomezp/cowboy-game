@@ -304,3 +304,23 @@ func game_over():
 	get_tree().paused = true
 	game_running = false
 	$GameOver.show()
+
+# Spawning control methods for special events
+func set_obstacle_spawning_enabled(enabled: bool):
+	obstacle_manager.set_spawning_enabled(enabled)
+
+func set_foe_spawning_enabled(enabled: bool):
+	foe_spawner.set_spawning_enabled(enabled)
+
+func set_coin_spawning_enabled(enabled: bool):
+	coin_spawner.set_spawning_enabled(enabled)
+
+func set_butterfly_spawning_enabled(enabled: bool):
+	butterfly_spawner.set_spawning_enabled(enabled)
+
+# Convenience method to enable/disable all spawning
+func set_all_spawning_enabled(enabled: bool):
+	set_obstacle_spawning_enabled(enabled)
+	set_foe_spawning_enabled(enabled)
+	set_coin_spawning_enabled(enabled)
+	set_butterfly_spawning_enabled(enabled)

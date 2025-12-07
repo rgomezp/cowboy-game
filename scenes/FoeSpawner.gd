@@ -6,6 +6,7 @@ var foe_types: Array[PackedScene]
 var last_foe_distance: int = 0
 var screen_size: Vector2i
 var ground_sprite: Sprite2D
+var spawning_enabled: bool = true  # Can be disabled for special events
 
 func initialize(foe_scenes: Array[PackedScene], screen_size: Vector2i, ground_sprite: Sprite2D):
 	foe_types = foe_scenes
@@ -23,7 +24,15 @@ func should_spawn_foe(current_distance: int) -> bool:
 	var required_spacing = randi_range(min_spacing, max_spacing)
 	return distance_since_last >= required_spacing
 
+func set_spawning_enabled(enabled: bool):
+	spawning_enabled = enabled
+
+func is_spawning_enabled() -> bool:
+	return spawning_enabled
+
 func update(current_distance: int) -> Node:
+	if not spawning_enabled:
+		return null
 	if should_spawn_foe(current_distance):
 		var foe = spawn_foe(current_distance)
 		last_foe_distance = current_distance
