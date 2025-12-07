@@ -10,10 +10,10 @@ var screen_size: Vector2i
 var ground_sprite: Sprite2D
 var spawning_enabled: bool = true  # Can be disabled for special events
 
-func initialize(obstacle_scenes: Array[PackedScene], screen_size: Vector2i, ground_sprite: Sprite2D):
+func initialize(obstacle_scenes: Array[PackedScene], size: Vector2i, ground: Sprite2D):
 	obstacle_types = obstacle_scenes
-	self.screen_size = screen_size
-	self.ground_sprite = ground_sprite
+	self.screen_size = size
+	self.ground_sprite = ground
 
 func reset():
 	last_obstacle_distance = 0

@@ -6,8 +6,8 @@ signal foe_removed(foe: Node)
 var foes: Array = []
 var screen_size: Vector2i
 
-func initialize(screen_size: Vector2i):
-	self.screen_size = screen_size
+func initialize(size: Vector2i):
+	self.screen_size = size
 
 func reset():
 	clear_all_foes()

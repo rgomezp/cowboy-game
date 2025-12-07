@@ -21,10 +21,10 @@ var wall_spawn_delay: float = 0.05  # Delay between each coin in the wall (rapid
 var last_wall_coin_time: float = 0.0
 var spawning_enabled: bool = true  # Can be disabled for special events
 
-func initialize(coin_scene: PackedScene, screen_size: Vector2i, ground_top_y: float = 1280.0):
-	self.coin_scene = coin_scene
-	self.screen_size = screen_size
-	self.ground_top_y = ground_top_y
+func initialize(scene: PackedScene, size: Vector2i, ground_y: float = 1280.0):
+	self.coin_scene = scene
+	self.screen_size = size
+	self.ground_top_y = ground_y
 
 func reset():
 	last_coin_time = 0.0

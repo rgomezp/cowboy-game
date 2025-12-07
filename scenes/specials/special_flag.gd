@@ -9,8 +9,8 @@ var has_entered_view: bool = false  # Track if we've already emitted the signal
 
 const GROUND_LEVEL_Y: float = 1280.0  # Ground level y coordinate
 
-func initialize(speed: float, screen_size: Vector2i, camera_x: float):
-	self.screen_size = screen_size
+func initialize(_speed: float, size: Vector2i, camera_x: float):
+	self.screen_size = size
 	initial_camera_x = camera_x  # Store initial camera position
 
 func _ready():
@@ -19,7 +19,7 @@ func _ready():
 	if tree:
 		main_scene = tree.current_scene
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	# Get main scene reference if not set yet
 	if not main_scene:
 		var tree = get_tree()

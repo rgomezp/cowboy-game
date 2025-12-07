@@ -9,9 +9,9 @@ var next_butterfly_interval: float = 0.0
 var screen_size: Vector2i
 var spawning_enabled: bool = true  # Can be disabled for special events
 
-func initialize(butterfly_scene: PackedScene, screen_size: Vector2i):
-	self.butterfly_scene = butterfly_scene
-	self.screen_size = screen_size
+func initialize(scene: PackedScene, size: Vector2i):
+	self.butterfly_scene = scene
+	self.screen_size = size
 
 func reset():
 	last_butterfly_time = 0.0
