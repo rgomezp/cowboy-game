@@ -28,7 +28,7 @@ func check_high_score():
 		high_score_updated.emit(high_score)
 
 func get_display_score() -> int:
-	return score / SCORE_MODIFIER
+	return int(float(score) / float(SCORE_MODIFIER))
 
 func get_display_high_score() -> int:
-	return high_score / SCORE_MODIFIER
+	return int(float(high_score) / float(SCORE_MODIFIER))
