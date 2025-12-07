@@ -37,7 +37,7 @@ const PLAYER_START_POS := Vector2i(19, 166)
 const CAMERA_START_POS := Vector2i(540, 960)
 
 var speed : float
-const START_SPEED : float = 10.0
+const START_SPEED : int = 10
 const SPEED_MODIFIER : int = 20_000
 const MAX_SPEED : int = 15
 var screen_size : Vector2i
@@ -162,7 +162,8 @@ func new_game():
 func _process(delta: float) -> void:
 	if game_running:
 		# Calculate speed based on distance traveled, not score
-		speed = START_SPEED + distance / float(SPEED_MODIFIER)
+		@warning_ignore("integer_division")
+		speed = START_SPEED + distance / SPEED_MODIFIER
 		if speed > MAX_SPEED:
 			speed = MAX_SPEED
 
