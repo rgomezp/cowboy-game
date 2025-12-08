@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://4qd0d6o85yoi"]
 
 [ext_resource type="Texture2D" uid="uid://ch41p66ev0hmi" path="res://assets/img/specials/us_flag.png" id="1_us"]
-[ext_resource type="Script" uid="uid://dfo8lwvbbnylk" path="res://scenes/specials/special_flag.gd" id="2_special"]
+[ext_resource type="Script" uid="uid://dfo8lwvbbnylk" path="res://scenes/specials/special.gd" id="2_special"]
 
 [node name="USFlag" type="Node2D"]
 script = ExtResource("2_special")

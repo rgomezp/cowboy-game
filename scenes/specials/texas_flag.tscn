@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://dfpbyrv3cebct"]
 
 [ext_resource type="Texture2D" uid="uid://u774soipoep" path="res://assets/img/specials/texas_flag.png" id="1_texas"]
-[ext_resource type="Script" uid="uid://dfo8lwvbbnylk" path="res://scenes/specials/special_flag.gd" id="2_special"]
+[ext_resource type="Script" uid="uid://dfo8lwvbbnylk" path="res://scenes/specials/special.gd" id="2_special"]
 
 [node name="TexasFlag" type="Node2D"]
 script = ExtResource("2_special")
@@ -10,4 +10,3 @@ script = ExtResource("2_special")
 texture_filter = 1
 scale = Vector2(3, 3)
 texture = ExtResource("1_texas")
-
