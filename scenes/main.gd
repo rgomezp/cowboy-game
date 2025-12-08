@@ -11,6 +11,7 @@ var troll_scene = preload("res://scenes/foes/troll/troll.tscn")
 var texas_flag_scene = preload("res://scenes/specials/texas_flag.tscn")
 var us_flag_scene = preload("res://scenes/specials/us_flag.tscn")
 var cheerleader_scene = preload("res://scenes/specials/cheerleader.tscn")
+var smoker_scene = preload("res://scenes/specials/smoker.tscn")
 
 # Preload manager scripts
 var ScoreManager = preload("res://scenes/ScoreManager.gd")
@@ -122,7 +123,7 @@ func setup_managers():
 	add_child(special_event_manager)
 	special_event_manager.special_event_started.connect(_on_special_event_started)
 	special_event_manager.special_event_ended.connect(_on_special_event_ended)
-	var special_types: Array[PackedScene] = [texas_flag_scene, us_flag_scene, cheerleader_scene]
+	var special_types: Array[PackedScene] = [texas_flag_scene, us_flag_scene, cheerleader_scene, smoker_scene]
 	special_event_manager.initialize(special_types, screen_size, ground_sprite, $SpecialGround, $SpecialEventButtons)
 
 	# Connect button signals
