@@ -109,11 +109,30 @@ func spawn_special(current_speed: float, camera_x: float):
 		current_special.entered_camera_view.connect(_on_special_entered_camera_view)
 
 	# Position flag so bottom touches ground level (y=1280)
-	var sprite = current_special.get_node("Sprite2D")
-	var sprite_height = sprite.texture.get_height()
+	# Handle both Sprite2D and AnimatedSprite2D
+	var sprite = null
+	var sprite_height = 0.0
 	var sprite_scale = Vector2(1, 1)
-	if "scale" in sprite:
-		sprite_scale = sprite.scale
+	
+	# Try to get Sprite2D first
+	if current_special.has_node("Sprite2D"):
+		sprite = current_special.get_node("Sprite2D")
+		if sprite and sprite.texture:
+			sprite_height = sprite.texture.get_height()
+			sprite_scale = sprite.scale
+	# If not found, try AnimatedSprite2D
+	elif current_special.has_node("AnimatedSprite2D"):
+		sprite = current_special.get_node("AnimatedSprite2D")
+		if sprite and sprite.sprite_frames:
+			# Get the first frame's texture to determine height
+			var first_frame = sprite.sprite_frames.get_frame_texture("default", 0)
+			if first_frame:
+				sprite_height = first_frame.get_height()
+			sprite_scale = sprite.scale
+	
+	# If we still don't have a valid sprite, use a default height
+	if sprite_height == 0.0:
+		sprite_height = 50.0  # Default fallback height
 
 	# Ground level is at y=1280
 	# Sprite2D origin is at center by default, so we need to position center at (ground_y - half_height)

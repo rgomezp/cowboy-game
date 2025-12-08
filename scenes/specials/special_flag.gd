@@ -7,7 +7,7 @@ var main_scene: Node = null
 var initial_camera_x: float = 0.0  # Track camera position when flag was spawned
 var has_entered_view: bool = false  # Track if we've already emitted the signal
 
-const GROUND_LEVEL_Y: float = 1280.0  # Ground level y coordinate
+const GROUND_LEVEL_Y: float = 1300.0  # Ground level y coordinate
 
 func initialize(_speed: float, size: Vector2i, camera_x: float):
 	self.screen_size = size
@@ -35,7 +35,7 @@ func _process(_delta: float) -> void:
 	# Camera moves at full speed, so flag lags behind creating parallax effect
 	# Calculate position relative to initial camera position
 	var camera_delta = camera_x - initial_camera_x
-	var flag_delta = camera_delta * 0.3  # Flag moves 30% of camera movement
+	var flag_delta = camera_delta * 0.25  # Flag moves 30% of camera movement
 	var spawn_offset = screen_size.x + 100  # Original spawn offset
 	position.x = initial_camera_x + spawn_offset + flag_delta
 

@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://b0l1a04nr5013"]
+[gd_scene load_steps=6 format=3 uid="uid://b0l1a04nr5013"]
 
 [ext_resource type="Texture2D" uid="uid://dt7ed3yjhutok" path="res://assets/img/specials/cheerleader_sprite_sheet.png" id="1_p8xdb"]
+[ext_resource type="Script" uid="uid://dfo8lwvbbnylk" path="res://scenes/specials/special_flag.gd" id="2_special"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_p8xdb"]
 atlas = ExtResource("1_p8xdb")
@@ -25,6 +26,7 @@ animations = [{
 }]
 
 [node name="Node2D" type="Node2D"]
+script = ExtResource("2_special")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
