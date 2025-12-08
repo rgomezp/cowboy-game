@@ -51,6 +51,7 @@ var score_delta_color_white: bool = true  # Track color alternation
 
 # Special event button result tracking
 var special_button_result: String = ""  # "correct", "wrong", or "" (not pressed)
+var special_button_reaction_time: float = -1.0  # Time taken for correct answers, -1.0 for incorrect/missed
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -122,7 +123,7 @@ func setup_managers():
 	special_event_manager.special_event_ended.connect(_on_special_event_ended)
 	var special_types: Array[PackedScene] = [texas_flag_scene, us_flag_scene]
 	special_event_manager.initialize(special_types, screen_size, ground_sprite, $SpecialGround, $SpecialEventButtons)
-	
+
 	# Connect button signals
 	$SpecialEventButtons.button_pressed.connect(_on_special_button_pressed)
 	$SpecialEventButtons.buttons_hidden.connect(_on_special_buttons_hidden)
@@ -356,12 +357,13 @@ func _on_special_event_started():
 	set_obstacle_spawning_enabled(false)
 	set_foe_spawning_enabled(false)
 	set_butterfly_spawning_enabled(false)
-	
+
 	# Show "Special Event!" message
 	$SpecialEventHud.show_special_event()
-	
+
 	# Reset button result tracking
 	special_button_result = ""
+	special_button_reaction_time = -1.0
 
 func _on_special_event_ended():
 	# Re-enable all spawners
@@ -378,24 +380,29 @@ func _on_special_button_pressed(is_good: bool):
 		# Show "Too Early!" message
 		$SpecialEventHud.show_outcome("too_early")
 		return
-	
+
+	# Get the timer value (time since sprite entered view)
+	var reaction_time = buttons_ui.get_timer_value()
+
 	# Player pressed a button - check if they got it right
 	var special_path = special_event_manager.get_current_special_scene_path()
 	if special_path.is_empty():
 		# No sprite path available yet - don't score
 		return
-	
+
 	var is_actually_good = SpecialSpriteData.is_good_sprite(special_path)
-	
+
 	if is_good == is_actually_good:
 		# Correct answer - award 500 points (500 * 100 = 50000 raw score)
 		score_manager.add_score(500 * 100, true)  # Show delta for bonus event
 		special_button_result = "correct"
+		special_button_reaction_time = reaction_time  # Store reaction time for correct answers
 	else:
 		# Wrong answer - deduct 500 points (500 * 100 = 50000 raw score)
 		score_manager.add_score(-500 * 100, true)  # Show delta for penalty
 		special_button_result = "wrong"
-	
+		special_button_reaction_time = -1.0  # Don't show time for wrong answers
+
 	# Buttons are already hidden by the button press handler (which sets force_hide = true)
 
 func _on_special_buttons_hidden(was_pressed: bool, too_early: bool):
@@ -403,11 +410,11 @@ func _on_special_buttons_hidden(was_pressed: bool, too_early: bool):
 	if too_early:
 		# Button was pressed too early - already handled in _on_special_button_pressed
 		return
-	
+
 	if was_pressed:
 		# Button was pressed - show result based on whether it was correct or wrong
 		if special_button_result == "correct":
-			$SpecialEventHud.show_outcome("nice")
+			$SpecialEventHud.show_outcome("nice", special_button_reaction_time)
 		elif special_button_result == "wrong":
 			$SpecialEventHud.show_outcome("oops")
 		else:

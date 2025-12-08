@@ -74,6 +74,10 @@ func has_sprite_entered_view() -> bool:
 	# Public getter to check if sprite has entered view
 	return sprite_entered_view
 
+func get_timer_value() -> float:
+	# Public getter to get the current timer value (time since sprite entered view)
+	return timer
+
 func hide_buttons():
 	# STRICT Protection: Once sprite has entered view, buttons MUST stay visible for 2 full seconds
 	# Only allow hiding if:
