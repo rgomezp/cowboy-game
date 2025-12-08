@@ -35,7 +35,7 @@ func _process(_delta: float) -> void:
 	# Camera moves at full speed, so flag lags behind creating parallax effect
 	# Calculate position relative to initial camera position
 	var camera_delta = camera_x - initial_camera_x
-	var flag_delta = camera_delta * 0.25  # Flag moves 30% of camera movement
+	var flag_delta = camera_delta * 0.30  # Flag moves 30% of camera movement
 	var spawn_offset = screen_size.x + 100  # Original spawn offset
 	position.x = initial_camera_x + spawn_offset + flag_delta
 

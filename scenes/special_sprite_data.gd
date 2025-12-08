@@ -7,6 +7,8 @@ const SPRITE_QUALITY: Dictionary = {
 	"res://scenes/specials/us_flag.tscn": true,     # true = "makes sense" (good)
 	"res://scenes/specials/cheerleader.tscn": true, # true = "makes sense" (good)
 	"res://scenes/specials/smoker.tscn": true,      # true = "makes sense" (good)
+	"res://scenes/specials/devil_plush.tscn": false, # false = "hwwat?" (bad)
+	"res://scenes/specials/man_baby.tscn": false,   # false = "hwwat?" (bad)
 }
 
 static func is_good_sprite(scene_path: String) -> bool:
