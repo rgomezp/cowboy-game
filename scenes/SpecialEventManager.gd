@@ -113,7 +113,7 @@ func spawn_special(current_speed: float, camera_x: float):
 	var sprite = null
 	var sprite_height = 0.0
 	var sprite_scale = Vector2(1, 1)
-	
+
 	# Try to get Sprite2D first
 	if current_special.has_node("Sprite2D"):
 		sprite = current_special.get_node("Sprite2D")
@@ -129,7 +129,7 @@ func spawn_special(current_speed: float, camera_x: float):
 			if first_frame:
 				sprite_height = first_frame.get_height()
 			sprite_scale = sprite.scale
-	
+
 	# If we still don't have a valid sprite, use a default height
 	if sprite_height == 0.0:
 		sprite_height = 50.0  # Default fallback height

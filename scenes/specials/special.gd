@@ -31,18 +31,46 @@ func _process(_delta: float) -> void:
 	if main_scene and main_scene.has_node("Camera2D"):
 		camera_x = main_scene.get_node("Camera2D").position.x
 
-	# For parallax: flag moves at 30% of camera movement
+	# For parallax: object moves at 30% of camera movement
 	# Camera moves at full speed, so flag lags behind creating parallax effect
 	# Calculate position relative to initial camera position
 	var camera_delta = camera_x - initial_camera_x
-	var flag_delta = camera_delta * 0.30  # Flag moves 30% of camera movement
+	var flag_delta = camera_delta * 0.40  # Object moves 30% of camera movement
 	var spawn_offset = screen_size.x + 100  # Original spawn offset
 	position.x = initial_camera_x + spawn_offset + flag_delta
 
-	# Check if flag has entered camera view (right edge of screen)
-	if not has_entered_view and position.x <= camera_x + screen_size.x:
-		has_entered_view = true
-		entered_camera_view.emit()
+	# Check if object has entered camera view (entire object must be in view)
+	# Get the right edge of the object by checking sprite width
+	if not has_entered_view:
+		var object_right_edge = position.x
+		var sprite = null
+		var sprite_width = 0.0
+		var sprite_scale = Vector2(1, 1)
+
+		# Try to get Sprite2D first
+		if has_node("Sprite2D"):
+			sprite = get_node("Sprite2D")
+			if sprite and sprite.texture:
+				sprite_width = sprite.texture.get_width()
+				sprite_scale = sprite.scale
+		# If not found, try AnimatedSprite2D
+		elif has_node("AnimatedSprite2D"):
+			sprite = get_node("AnimatedSprite2D")
+			if sprite and sprite.sprite_frames:
+				# Get the first frame's texture to determine width
+				var first_frame = sprite.sprite_frames.get_frame_texture("default", 0)
+				if first_frame:
+					sprite_width = first_frame.get_width()
+				sprite_scale = sprite.scale
+
+		# Calculate right edge: position.x is center, so add half width (accounting for scale)
+		if sprite_width > 0.0:
+			object_right_edge = position.x + (sprite_width * sprite_scale.x) / 2.0
+
+		# Object has fully entered when its right edge is within camera view
+		if object_right_edge <= camera_x + screen_size.x:
+			has_entered_view = true
+			entered_camera_view.emit()
 
 	# Check if off-screen and remove
 	var cleanup_threshold = camera_x - screen_size.x * 2
