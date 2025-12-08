@@ -19,7 +19,7 @@ func handle_obstacle_collision(body: Node, obstacle: Node):
 
 		# Check for top collision FIRST (before checking destroyed flag) to handle race conditions
 		# If this is a foe, check if player is also overlapping the top collision
-		var is_foe = obstacle.name == "Furry" or obstacle.name == "Troll" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and ("furry.gd" in obstacle.get_script().resource_path or "troll.gd" in obstacle.get_script().resource_path))
+		var is_foe = obstacle.name == "Furry" or obstacle.name == "Troll" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and "foe_base.gd" in obstacle.get_script().resource_path)
 		if is_foe and obstacle.has_node("CollisionBoxTop"):
 			var top_collision = obstacle.get_node("CollisionBoxTop")
 			if top_collision is Area2D:
@@ -71,35 +71,42 @@ func handle_obstacle_collision(body: Node, obstacle: Node):
 		# Player hit the main collision but not the top - game over
 		player_hit_obstacle.emit(obstacle)
 
+func _disable_foe_collisions(obstacle: Node):
+	# Helper function to disable foe collisions after signal completes
+	if obstacle.has_node("CollisionBox"):
+		obstacle.get_node("CollisionBox").disabled = true
+	if obstacle is Area2D:
+		obstacle.monitoring = false
+		obstacle.monitorable = false
+
+func _disable_butterfly_collisions(obstacle: Node):
+	# Helper function to disable butterfly collisions after signal completes
+	if obstacle.has_node("CollisionShape2D"):
+		obstacle.get_node("CollisionShape2D").disabled = true
+	if obstacle is Area2D:
+		obstacle.monitoring = false
+		obstacle.monitorable = false
+	if obstacle.has_node("TopCollision"):
+		var top_collision = obstacle.get_node("TopCollision")
+		if top_collision is Area2D:
+			top_collision.monitoring = false
+			top_collision.monitorable = false
+
 func handle_top_collision(body: Node, obstacle: Node):
 	# Check if body is the player
 	var is_player = body == player or body.name == "Player" or body.name == "Player2"
 	if is_player:
-		# Check if this is a foe (has furry.gd or troll.gd script or name is Furry/Troll)
-		var is_foe = obstacle.name == "Furry" or obstacle.name == "Troll" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and ("furry.gd" in obstacle.get_script().resource_path or "troll.gd" in obstacle.get_script().resource_path))
+		# Check if this is a foe (uses foe_base.gd script or name is Furry/Troll)
+		var is_foe = obstacle.name == "Furry" or obstacle.name == "Troll" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and "foe_base.gd" in obstacle.get_script().resource_path)
 		if is_foe:
-			# Immediately disable main collision BEFORE emitting signal to prevent race condition
-			if obstacle.has_node("CollisionBox"):
-				obstacle.get_node("CollisionBox").disabled = true
-			# Disable main Area2D monitoring immediately
-			obstacle.monitoring = false
-			obstacle.monitorable = false
+			# Defer disabling collisions to avoid flushing queries error
+			call_deferred("_disable_foe_collisions", obstacle)
 			# Don't set is_destroyed here - let destroy() method handle it and play animation
 			# Player jumped on the foe from the top - destroy it
 			player_jumped_on_foe.emit(obstacle)
 		else:
-			# Immediately disable main collision BEFORE emitting signal to prevent race condition
-			if obstacle.has_node("CollisionShape2D"):
-				obstacle.get_node("CollisionShape2D").disabled = true
-			# Disable main Area2D monitoring immediately
-			obstacle.monitoring = false
-			obstacle.monitorable = false
-			# Disable top collision
-			if obstacle.has_node("TopCollision"):
-				var top_collision = obstacle.get_node("TopCollision")
-				if top_collision is Area2D:
-					top_collision.monitoring = false
-					top_collision.monitorable = false
+			# Defer disabling collisions to avoid flushing queries error
+			call_deferred("_disable_butterfly_collisions", obstacle)
 			# Player jumped on the butterfly from the top - bounce
 			player_bounced_on_butterfly.emit(obstacle)
 

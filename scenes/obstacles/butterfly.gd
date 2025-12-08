@@ -15,12 +15,8 @@ func _process(_delta: float) -> void:
 		# Move the parent Area2D instead of just the sprite
 		get_parent().position.x -= main_scene.speed / 10
 
-func destroy():
-	if is_destroyed:
-		return
-	
-	is_destroyed = true
-	# Immediately disable collisions to prevent further interactions
+func _disable_collisions():
+	# Helper function to disable collisions after signal completes
 	var parent = get_parent()
 	if parent is Area2D:
 		parent.monitoring = false
@@ -34,6 +30,14 @@ func destroy():
 			if top_collision is Area2D:
 				top_collision.monitoring = false
 				top_collision.monitorable = false
+
+func destroy():
+	if is_destroyed:
+		return
+	
+	is_destroyed = true
+	# Defer disabling collisions to avoid flushing queries error
+	call_deferred("_disable_collisions")
 	
 	# Play the destroy animation
 	play("destroy")
