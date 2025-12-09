@@ -25,7 +25,23 @@ func should_spawn_foe(current_distance: int) -> bool:
 	return distance_since_last >= required_spacing
 
 func set_spawning_enabled(enabled: bool):
+	var was_enabled = spawning_enabled
 	spawning_enabled = enabled
+	print("[FoeSpawner] Spawning enabled: ", enabled, " (was: ", was_enabled, ")")
+
+func sync_distance(current_distance: int):
+	# When spawning is re-enabled, adjust last_foe_distance to allow
+	# immediate spawning by subtracting the minimum spacing requirement
+	# This fixes timing issues after powerups where distance increased faster
+	if spawning_enabled:
+		var old_last_distance = last_foe_distance
+		# Subtract minimum spacing so objects can spawn immediately
+		# Use a value slightly less than min_spacing to ensure spawning happens soon
+		last_foe_distance = current_distance - 10000
+		print("[FoeSpawner] sync_distance: current_distance=", current_distance,
+		      ", old_last_foe_distance=", old_last_distance,
+		      ", new_last_foe_distance=", last_foe_distance,
+		      ", distance_since_last=", current_distance - last_foe_distance)
 
 func is_spawning_enabled() -> bool:
 	return spawning_enabled
@@ -35,7 +51,10 @@ func update(current_distance: int) -> Node:
 		return null
 	if should_spawn_foe(current_distance):
 		var foe = spawn_foe(current_distance)
+		var old_last_distance = last_foe_distance
 		last_foe_distance = current_distance
+		print("[FoeSpawner] update: SPAWNED foe at distance=", current_distance,
+		      ", position=(", foe.position.x, ", ", foe.position.y, "), last_foe_distance: ", old_last_distance, " -> ", last_foe_distance)
 		return foe
 	return null
 
@@ -52,8 +71,12 @@ func spawn_foe(current_distance: int) -> Node:
 	
 	var ground_top_y = self.ground_sprite.offset.y
 	
+	# Camera starts at 540, so calculate camera position from distance
+	# This ensures foes spawn off-camera ahead, not mid-screen
+	const CAMERA_START_X: int = 540
+	var camera_x = CAMERA_START_X + current_distance
 	# Add some randomness to the x position
-	var base_x = screen_size.x + current_distance + 100
+	var base_x = camera_x + screen_size.x + 100
 	var random_offset = randi_range(-50, 50)
 	var foe_x: int = base_x + random_offset
 	

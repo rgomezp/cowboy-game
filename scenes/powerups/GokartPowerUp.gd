@@ -9,7 +9,7 @@ extends "res://scenes/powerups/PowerUpBase.gd"
 
 const RAMP_UP_DURATION: float = 5.0
 const RAMP_DOWN_DURATION: float = 5.0
-const COIN_WALL_SIZE: int = 40
+const COIN_WALL_SIZE: int = 60
 const SPEED_MULTIPLIER: float = 2.0
 
 var base_speed: float = 0.0
@@ -22,8 +22,10 @@ func _init():
 func _on_activate(main_node: Node) -> void:
 	# Store base speed
 	base_speed = main_node.speed
+	print("[GokartPowerUp] _on_activate: base_speed=", base_speed, ", current_distance=", main_node.distance)
 
 	# Pause obstacle and foe spawns
+	print("[GokartPowerUp] Disabling spawning...")
 	main_node.set_obstacle_spawning_enabled(false)
 	main_node.set_foe_spawning_enabled(false)
 	main_node.set_butterfly_spawning_enabled(false)
@@ -56,16 +58,23 @@ func _on_update(_delta: float, _main_node: Node) -> void:
 	# We'll store it in a variable that main can access
 
 func _on_deactivate(main_node: Node) -> void:
+	print("[GokartPowerUp] _on_deactivate: current_distance=", main_node.distance, ", camera_x=", main_node.get_node("Camera2D").position.x)
 	# Re-enable spawns
+	print("[GokartPowerUp] Re-enabling spawning...")
 	main_node.set_obstacle_spawning_enabled(true)
 	main_node.set_foe_spawning_enabled(true)
 	main_node.set_butterfly_spawning_enabled(true)
+
+	# Reset coin spawner timer to fix timing after speed changes
+	# (coins aren't disabled during powerup, but their timing may be affected)
+	main_node.coin_spawner.reset_timer()
 
 	# Reset animation (stub)
 	# main_node.get_node("Player").get_node("AnimatedSprite2D").play("running")
 
 	speed_modifier = 1.0
 	coin_wall_spawned = false
+	print("[GokartPowerUp] Powerup deactivated, spawning should resume")
 
 func spawn_coin_wall(main_node: Node) -> void:
 	# Spawn a wall of 40 coins
@@ -76,7 +85,7 @@ func spawn_coin_wall(main_node: Node) -> void:
 	var camera_x = main_node.get_node("Camera2D").position.x
 
 	# Coin height offsets (same as CoinSpawner uses)
-	var coin_height_offsets: Array[int] = [-200, -250, -300, -350, -400, -500]
+	var coin_height_offsets: Array[int] = [-100]
 	var horizontal_spacing: int = 50
 
 	for i in range(COIN_WALL_SIZE):

@@ -35,7 +35,21 @@ func reset():
 	wall_coins_spawned = 0
 
 func set_spawning_enabled(enabled: bool):
+	var was_enabled = spawning_enabled
 	spawning_enabled = enabled
+	print("[CoinSpawner] Spawning enabled: ", enabled, " (was: ", was_enabled, ")")
+
+func reset_timer():
+	# When spawning is re-enabled, reset the timer to prevent immediate spawning
+	# This ensures proper timing after a pause
+	print("[CoinSpawner] reset_timer: Resetting coin spawner timers")
+	last_coin_time = 0.0
+	next_coin_interval = randf_range(0.5, 2.0)
+	last_wall_time = 0.0
+	next_wall_interval = randf_range(5.0, 10.0)
+	is_spawning_wall = false
+	wall_coins_spawned = 0
+	print("[CoinSpawner] reset_timer: next_coin_interval=", next_coin_interval, ", next_wall_interval=", next_wall_interval)
 
 func is_spawning_enabled() -> bool:
 	return spawning_enabled
@@ -81,12 +95,17 @@ func update(delta: float, current_distance: int) -> Node:
 
 func spawn_coin(current_distance: int) -> Node:
 	var coin = coin_scene.instantiate()
-	var obs_x: int = int(screen_size.x + current_distance + GameConstants.SPAWN_OFFSET)
+	# Camera starts at 540, so calculate camera position from distance
+	# This ensures coins spawn off-camera ahead, not mid-screen
+	const CAMERA_START_X: int = 540
+	var camera_x = CAMERA_START_X + current_distance
+	var obs_x: int = int(camera_x + screen_size.x + GameConstants.SPAWN_OFFSET)
 	# Position coin above ground at various heights (all jump-reachable)
 	# Ground top is at 1600.5, so coins hover above it
 	var height_offset = coin_height_offsets[randi() % coin_height_offsets.size()]
 	var obs_y: int = int(ground_top_y + height_offset)
 	coin.position = Vector2i(obs_x, obs_y)
+	print("[CoinSpawner] spawn_coin: SPAWNED at distance=", current_distance, ", camera_x=", camera_x, ", position=(", obs_x, ", ", obs_y, ")")
 	coin_spawned.emit(coin)
 	return coin
 
@@ -94,8 +113,11 @@ func spawn_wall_coin(current_distance: int) -> Node:
 	var coin = coin_scene.instantiate()
 	# Space coins horizontally to create a wall effect
 	# Each coin is spaced 50 pixels apart horizontally
+	# Camera starts at 540, so calculate camera position from distance
+	const CAMERA_START_X: int = 540
+	var camera_x = CAMERA_START_X + current_distance
 	var horizontal_spacing: int = 50
-	var obs_x: int = int(screen_size.x + current_distance + GameConstants.SPAWN_OFFSET + (wall_coins_spawned * horizontal_spacing))
+	var obs_x: int = int(camera_x + screen_size.x + GameConstants.SPAWN_OFFSET + (wall_coins_spawned * horizontal_spacing))
 	# For wall coins, use random heights to create a more chaotic wall effect
 	var height_offset = coin_height_offsets[randi() % coin_height_offsets.size()]
 	var obs_y: int = int(ground_top_y + height_offset)

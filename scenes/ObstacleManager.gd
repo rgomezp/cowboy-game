@@ -35,7 +35,23 @@ func should_generate_obstacle(current_distance: int) -> bool:
 	return distance_since_last >= required_spacing
 
 func set_spawning_enabled(enabled: bool):
+	var was_enabled = spawning_enabled
 	spawning_enabled = enabled
+	print("[ObstacleManager] Spawning enabled: ", enabled, " (was: ", was_enabled, ")")
+
+func sync_distance(current_distance: int):
+	# When spawning is re-enabled, adjust last_obstacle_distance to allow
+	# immediate spawning by subtracting the minimum spacing requirement
+	# This fixes timing issues after powerups where distance increased faster
+	if spawning_enabled:
+		var old_last_distance = last_obstacle_distance
+		# Subtract minimum spacing so objects can spawn immediately
+		# Use a value slightly less than min_spacing to ensure spawning happens soon
+		last_obstacle_distance = current_distance - 3000
+		print("[ObstacleManager] sync_distance: current_distance=", current_distance, 
+			  ", old_last_obstacle_distance=", old_last_distance, 
+			  ", new_last_obstacle_distance=", last_obstacle_distance,
+			  ", distance_since_last=", current_distance - last_obstacle_distance)
 
 func is_spawning_enabled() -> bool:
 	return spawning_enabled
@@ -56,8 +72,12 @@ func generate_obstacle(current_distance: int) -> Node:
 
 	var ground_top_y = ground_sprite.offset.y
 
+	# Camera starts at 540, so calculate camera position from distance
+	# This ensures obstacles spawn off-camera ahead, not mid-screen
+	const CAMERA_START_X: int = 540
+	var camera_x = CAMERA_START_X + current_distance
 	# Add some randomness to the x position
-	var base_x = screen_size.x + current_distance + 100
+	var base_x = camera_x + screen_size.x + 100
 	var random_offset = randi_range(-50, 50)
 	var obs_x: int = base_x + random_offset
 
@@ -67,7 +87,10 @@ func generate_obstacle(current_distance: int) -> Node:
 	# Set position on obstacle
 	obs.position = Vector2i(obs_x, obs_y)
 
+	var old_last_distance = last_obstacle_distance
 	last_obstacle_distance = current_distance
+	print("[ObstacleManager] generate_obstacle: SPAWNED at distance=", current_distance,
+		  ", position=(", obs_x, ", ", obs_y, "), last_obstacle_distance: ", old_last_distance, " -> ", last_obstacle_distance)
 	return obs
 
 func add_obstacle(obs: Node):

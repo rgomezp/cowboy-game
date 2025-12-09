@@ -396,16 +396,40 @@ func game_over():
 
 # Spawning control methods for special events
 func set_obstacle_spawning_enabled(enabled: bool):
+	var was_disabled = not obstacle_manager.is_spawning_enabled()
+	print("[Main] set_obstacle_spawning_enabled: enabled=", enabled, ", was_disabled=", was_disabled, ", distance=", distance)
 	obstacle_manager.set_spawning_enabled(enabled)
+	# Sync distance when re-enabling to fix timing after powerups
+	if enabled and was_disabled:
+		print("[Main] Syncing obstacle distance...")
+		obstacle_manager.sync_distance(distance)
 
 func set_foe_spawning_enabled(enabled: bool):
+	var was_disabled = not foe_spawner.is_spawning_enabled()
+	print("[Main] set_foe_spawning_enabled: enabled=", enabled, ", was_disabled=", was_disabled, ", distance=", distance)
 	foe_spawner.set_spawning_enabled(enabled)
+	# Sync distance when re-enabling to fix timing after powerups
+	if enabled and was_disabled:
+		print("[Main] Syncing foe distance...")
+		foe_spawner.sync_distance(distance)
 
 func set_coin_spawning_enabled(enabled: bool):
+	var was_disabled = not coin_spawner.is_spawning_enabled()
+	print("[Main] set_coin_spawning_enabled: enabled=", enabled, ", was_disabled=", was_disabled, ", distance=", distance)
 	coin_spawner.set_spawning_enabled(enabled)
+	# Reset timer when re-enabling to fix timing after powerups
+	if enabled and was_disabled:
+		print("[Main] Resetting coin timer...")
+		coin_spawner.reset_timer()
 
 func set_butterfly_spawning_enabled(enabled: bool):
+	var was_disabled = not butterfly_spawner.is_spawning_enabled()
+	print("[Main] set_butterfly_spawning_enabled: enabled=", enabled, ", was_disabled=", was_disabled, ", distance=", distance)
 	butterfly_spawner.set_spawning_enabled(enabled)
+	# Reset timer when re-enabling to fix timing after powerups
+	if enabled and was_disabled:
+		print("[Main] Resetting butterfly timer...")
+		butterfly_spawner.reset_timer()
 
 # Convenience method to enable/disable all spawning
 func set_all_spawning_enabled(enabled: bool):
