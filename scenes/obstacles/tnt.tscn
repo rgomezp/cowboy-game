@@ -1,38 +1,39 @@
-[gd_scene load_steps=12 format=3 uid="uid://d4dx0psgprbgy"]
+[gd_scene load_steps=13 format=3 uid="uid://d4dx0psgprbgy"]
 
-[ext_resource type="Texture2D" uid="uid://cjnewp7c0hb37" path="res://assets/img/obstacles/tnt.png" id="1_tnt"]
-[ext_resource type="Texture2D" uid="uid://bi7rj1mj6hx7q" path="res://assets/img/obstacles/tnt_explosion_sheet.png" id="2_nudj2"]
+[ext_resource type="Script" path="res://scenes/obstacles/tnt.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cjnewp7c0hb37" path="res://assets/img/obstacles/tnt.png" id="2_tnt"]
+[ext_resource type="Texture2D" uid="uid://bi7rj1mj6hx7q" path="res://assets/img/obstacles/tnt_explosion_sheet.png" id="3_nudj2"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_x2pb6"]
-atlas = ExtResource("1_tnt")
+atlas = ExtResource("2_tnt")
 region = Rect2(0, 0, 60, 60)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ymr72"]
-atlas = ExtResource("2_nudj2")
+atlas = ExtResource("3_nudj2")
 region = Rect2(0, 0, 60, 60)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_eo7of"]
-atlas = ExtResource("2_nudj2")
+atlas = ExtResource("3_nudj2")
 region = Rect2(60, 0, 60, 60)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_horhb"]
-atlas = ExtResource("2_nudj2")
+atlas = ExtResource("3_nudj2")
 region = Rect2(120, 0, 60, 60)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_dato2"]
-atlas = ExtResource("2_nudj2")
+atlas = ExtResource("3_nudj2")
 region = Rect2(180, 0, 60, 60)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wr8pq"]
-atlas = ExtResource("2_nudj2")
+atlas = ExtResource("3_nudj2")
 region = Rect2(240, 0, 60, 60)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_mbo3w"]
-atlas = ExtResource("2_nudj2")
+atlas = ExtResource("3_nudj2")
 region = Rect2(300, 0, 60, 60)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_12s1b"]
-atlas = ExtResource("2_nudj2")
+atlas = ExtResource("3_nudj2")
 region = Rect2(360, 0, 60, 60)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_64m31"]
@@ -73,6 +74,7 @@ animations = [{
 }]
 
 [node name="TNT" type="Area2D"]
+script = ExtResource("1_script")
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
 position = Vector2(341, 262)
