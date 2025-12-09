@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3 uid="uid://bxlt3s74ivsqp"]
+
+[ext_resource type="Script" uid="uid://cj7vh3tho8vg0" path="res://scenes/powerup_ui.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://tmby7edjc3bh" path="res://assets/img/buttons/powerups/gokart_powerup.png" id="2_gokart"]
+[ext_resource type="Texture2D" uid="uid://7qd1ie0qbadw" path="res://assets/img/buttons/powerups/shotgun_powerup.png" id="3_shotgun"]
+
+[node name="PowerUpUI" type="CanvasLayer"]
+script = ExtResource("1_script")
+
+[node name="GokartButton" type="TextureButton" parent="."]
+offset_left = 69.0
+offset_top = 1334.0
+offset_right = 269.0
+offset_bottom = 1534.0
+texture_normal = ExtResource("2_gokart")
+stretch_mode = 5
+
+[node name="ShotgunButton" type="TextureButton" parent="."]
+offset_left = 69.0
+offset_top = 1334.0
+offset_right = 269.0
+offset_bottom = 1534.0
+texture_normal = ExtResource("3_shotgun")
+stretch_mode = 5
+
+[connection signal="pressed" from="GokartButton" to="." method="_on_gokart_button_pressed"]
+[connection signal="pressed" from="ShotgunButton" to="." method="_on_shotgun_button_pressed"]
