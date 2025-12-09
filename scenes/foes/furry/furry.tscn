@@ -80,6 +80,7 @@ size = Vector2(89, 193)
 size = Vector2(70, 63)
 
 [node name="Furry" type="Area2D"]
+monitorable = true
 script = ExtResource("3_furry")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]

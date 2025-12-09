@@ -80,6 +80,7 @@ size = Vector2(208, 233)
 size = Vector2(191.5, 81)
 
 [node name="Troll" type="Area2D"]
+monitorable = true
 script = ExtResource("1_uk6g2")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
