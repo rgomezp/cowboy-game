@@ -8,7 +8,7 @@ var buttons_visible: bool = false
 var sprite_entered_view: bool = false  # Track if sprite has entered view
 var force_hide: bool = false  # Flag to force hide (e.g., when button is pressed)
 var buttons_hidden_for_event: bool = false  # Flag to prevent re-showing after hidden
-const TIMEOUT_AFTER_VIEW: float = 2.0  # 2 seconds after sprite enters view
+const TIMEOUT_AFTER_VIEW: float = 1.0  # 1 second after sprite enters view
 
 func _ready():
 	# Initialize as hidden, but don't use hide_buttons() to avoid triggering protection logic
@@ -32,14 +32,16 @@ func _process(delta: float):
 	if buttons_visible:
 		# If sprite has entered view, start counting down
 		if sprite_entered_view:
-			timer += delta
-			# Only hide buttons after 2 full seconds have passed since sprite entered view
+			# Only increment timer if delta is valid (prevents issues during powerup speed changes)
+			if delta > 0.0:
+				timer += delta
+			# Only hide buttons after 1 full second has passed since sprite entered view
 			# OR if force_hide is set (button was pressed)
 			if force_hide:
 				# Button was pressed - allow hiding
 				hide_buttons()
 			elif timer >= TIMEOUT_AFTER_VIEW:
-				# 2 seconds have passed - safe to hide now
+				# 1 second has passed - safe to hide now
 				hide_buttons()
 
 func show_buttons():
@@ -47,7 +49,7 @@ func show_buttons():
 	# Don't show if buttons were already hidden for this event
 	if buttons_hidden_for_event:
 		return
-	
+
 	buttons_visible = true
 	sprite_entered_view = false
 	force_hide = false
@@ -57,13 +59,15 @@ func show_buttons():
 	$HwwatButton.disabled = false
 
 func on_sprite_entered_view():
-	# Called when sprite enters camera view - start the 2 second timer
-	# Only start timer if buttons are visible
+	# Called when sprite enters camera view - start the 1 second timer
+	# Only start timer if buttons are visible and sprite hasn't already entered view
+	# This prevents resetting the timer if the signal is emitted multiple times
 	if buttons_visible and not sprite_entered_view:
 		sprite_entered_view = true
 		timer = 0.0  # Reset timer when sprite enters view
+		print("[SpecialEventButtons] on_sprite_entered_view: Timer reset to 0.0")
 		# Ensure buttons stay visible - this flag prevents premature hiding
-		# Once sprite enters view, buttons MUST stay visible for 2 full seconds
+		# Once sprite enters view, buttons MUST stay visible for 1 full second
 
 func get_is_visible() -> bool:
 	# Public getter to check if buttons are currently visible
@@ -76,16 +80,21 @@ func has_sprite_entered_view() -> bool:
 
 func get_timer_value() -> float:
 	# Public getter to get the current timer value (time since sprite entered view)
+	# Only return timer if sprite has entered view, otherwise return -1.0 to indicate invalid
+	if not sprite_entered_view:
+		print("[SpecialEventButtons] get_timer_value: Sprite hasn't entered view yet, returning -1.0")
+		return -1.0
+	print("[SpecialEventButtons] get_timer_value: Returning timer=", timer, " (sprite_entered_view=", sprite_entered_view, ")")
 	return timer
 
 func hide_buttons():
-	# STRICT Protection: Once sprite has entered view, buttons MUST stay visible for 2 full seconds
+	# STRICT Protection: Once sprite has entered view, buttons MUST stay visible for 1 full second
 	# Only allow hiding if:
-	# 1. Timer has expired (>= 2 seconds since sprite entered view), OR
+	# 1. Timer has expired (>= 1 second since sprite entered view), OR
 	# 2. force_hide is set (button was pressed), OR
 	# 3. Sprite hasn't entered view yet (buttons can be hidden before sprite appears)
 	if buttons_visible and sprite_entered_view and not force_hide:
-		# Sprite has entered view - enforce the 2 second minimum visibility
+		# Sprite has entered view - enforce the 1 second minimum visibility
 		if timer < TIMEOUT_AFTER_VIEW:
 			# Not enough time has passed - absolutely do not hide
 			return
