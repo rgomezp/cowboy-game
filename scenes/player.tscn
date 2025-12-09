@@ -1,4 +1,4 @@
-[gd_scene load_steps=56 format=3 uid="uid://b5p5uoo5ric43"]
+[gd_scene load_steps=57 format=3 uid="uid://b5p5uoo5ric43"]
 
 [ext_resource type="Texture2D" uid="uid://c738m7y10seg4" path="res://assets/img/sprites/player/blue_suit/idle.png" id="1_player_sprite"]
 [ext_resource type="Script" uid="uid://cg0fiueawokkh" path="res://scenes/player.gd" id="1_qu4a1"]
@@ -354,6 +354,9 @@ size = Vector2(14.142853, 28)
 [sub_resource type="CircleShape2D" id="CircleShape2D_tuyoq"]
 radius = 75.16948
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_d2wvv"]
+size = Vector2(30.85715, 27.999924)
+
 [node name="Player" type="CharacterBody2D"]
 z_index = 1
 texture_filter = 1
@@ -387,3 +390,8 @@ monitoring = false
 position = Vector2(-43.92856, 76.78572)
 scale = Vector2(0.9999998, 0.9999998)
 shape = SubResource("CircleShape2D_tuyoq")
+
+[node name="KartCollisionShape" type="CollisionShape2D" parent="."]
+position = Vector2(22.99999, 170.99994)
+scale = Vector2(0.9999998, 0.9999998)
+shape = SubResource("RectangleShape2D_d2wvv")

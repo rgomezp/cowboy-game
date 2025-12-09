@@ -58,9 +58,21 @@ func _get_animation_name(base_name: String) -> String:
 	return base_name
 
 func _physics_process(delta: float) -> void:
-	# Use glide gravity if double jump has been used, otherwise use normal gravity
-	var current_gravity = GLIDE_GRAVITY if has_double_jumped else GRAVITY
+	# Update collision shapes based on gokart power-up state
+	var gokart_active = _is_gokart_active()
+	
+	# Use glide gravity if double jump has been used and gokart is not active, otherwise use normal gravity
+	var current_gravity = GLIDE_GRAVITY if (has_double_jumped and not gokart_active) else GRAVITY
 	velocity.y += current_gravity * delta
+
+	if gokart_active:
+		# When gokart is active, use kart collision shape
+		$KartCollisionShape.disabled = false
+		$RunCollisionShape.disabled = true
+		$SlideCollisionShape.disabled = true
+	else:
+		# When gokart is not active, use normal collision shapes
+		$KartCollisionShape.disabled = true
 
 	# Update sliding timer
 	if is_sliding:
@@ -70,7 +82,8 @@ func _physics_process(delta: float) -> void:
 		if sliding_timer >= animation_duration:
 			is_sliding = false
 			sliding_timer = 0.0
-			$RunCollisionShape.disabled = false
+			if not gokart_active:
+				$RunCollisionShape.disabled = false
 
 	if is_on_floor():
 		# Reset double jump when touching the ground
@@ -85,17 +98,18 @@ func _physics_process(delta: float) -> void:
 				# Start tracking peak when jumping
 				is_tracking_peak = true
 				jump_peak_y = global_position.y
-			elif Input.is_action_just_pressed("ui_down") and not is_sliding:
+			elif Input.is_action_just_pressed("ui_down") and not is_sliding and not gokart_active:
 				is_sliding = true
 				sliding_timer = 0.0
 				$AnimatedSprite2D.play(_get_animation_name("sliding"))
 				$RunCollisionShape.disabled = true
-			elif is_sliding:
+			elif is_sliding and not gokart_active:
 				# Keep sliding animation playing and collision disabled
 				$AnimatedSprite2D.play(_get_animation_name("sliding"))
 			else:
 				$AnimatedSprite2D.play(_get_animation_name("running"))
-				$RunCollisionShape.disabled = false
+				if not gokart_active:
+					$RunCollisionShape.disabled = false
 	else:
 		# Track the peak height while rising
 		if is_tracking_peak:
@@ -104,9 +118,9 @@ func _physics_process(delta: float) -> void:
 			else:  # Started falling, stop tracking
 				is_tracking_peak = false
 
-		# Allow double jump only near the peak of the first jump
+		# Allow double jump only near the peak of the first jump (disabled when gokart is active)
 		var distance_from_peak = abs(global_position.y - jump_peak_y)
-		if Input.is_action_just_pressed("ui_accept") and not has_double_jumped and distance_from_peak <= DOUBLE_JUMP_PEAK_TOLERANCE:
+		if Input.is_action_just_pressed("ui_accept") and not has_double_jumped and not gokart_active and distance_from_peak <= DOUBLE_JUMP_PEAK_TOLERANCE:
 			velocity.y = DOUBLE_JUMP_VELOCITY
 			has_double_jumped = true
 			is_tracking_peak = false

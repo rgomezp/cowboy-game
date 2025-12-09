@@ -3,14 +3,14 @@ extends "res://scenes/powerups/PowerUpBase.gd"
 # Gokart powerup:
 # - Pause all obstacle and foe spawns
 # - Generate a wall of 40 coins
-# - Double game speed (gradual: 5s ramp up, 5s ramp down)
+# - Quadruple game speed (gradual: 5s ramp up, 5s ramp down)
 # - Lasts 7 seconds
 # - Switch to gokart animation (stub for now)
 
 const RAMP_UP_DURATION: float = 5.0
 const RAMP_DOWN_DURATION: float = 5.0
-const COIN_WALL_SIZE: int = 60
-const SPEED_MULTIPLIER: float = 2.0
+const COIN_WALL_SIZE: int = 100
+const SPEED_MULTIPLIER: float = 4.0
 
 var base_speed: float = 0.0
 var speed_modifier: float = 1.0
