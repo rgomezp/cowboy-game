@@ -17,6 +17,14 @@ func handle_obstacle_collision(body: Node, obstacle: Node):
 	var is_player = body == player or body.name == "Player" or body.name == "Player2"
 	print("[CollisionHandler] is_player=", is_player, " body==player=", (body == player), " body.name=", body.name)
 
+	# Check if gokart powerup is active - disable all player collisions during gokart
+	if main_node and main_node.powerup_manager:
+		var active_powerup = main_node.powerup_manager.get_active_powerup()
+		if active_powerup and active_powerup.name == "gokart":
+			if is_player:
+				print("[CollisionHandler] Gokart powerup active - ignoring player collision with: ", obstacle.name)
+				return
+
 	# If a shotgun target is already marked for destruction, ignore immediately
 	if main_node and main_node.powerup_manager:
 		var active_powerup = main_node.powerup_manager.get_active_powerup()
@@ -163,6 +171,15 @@ func _disable_butterfly_collisions(obstacle: Node):
 func handle_top_collision(body: Node, obstacle: Node):
 	# Check if body is the player
 	var is_player = body == player or body.name == "Player" or body.name == "Player2"
+	
+	# Check if gokart powerup is active - disable all player collisions during gokart
+	if main_node and main_node.powerup_manager:
+		var active_powerup = main_node.powerup_manager.get_active_powerup()
+		if active_powerup and active_powerup.name == "gokart":
+			if is_player:
+				print("[CollisionHandler] Gokart powerup active - ignoring top collision with: ", obstacle.name)
+				return
+	
 	if is_player:
 		# Check if this is a foe (uses foe_base.gd script or name is Furry/Troll)
 		var is_foe = obstacle.name == "Furry" or obstacle.name == "Troll" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and "foe_base.gd" in obstacle.get_script().resource_path)
