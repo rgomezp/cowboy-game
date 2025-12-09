@@ -1,0 +1,40 @@
+[gd_scene load_steps=3 format=3 uid="uid://b8k3m4n5p6q7r"]
+
+[ext_resource type="Script" path="res://scenes/powerup_hud.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://bbd3nccrf57vt" path="res://assets/fonts/retro.ttf" id="2_font"]
+
+[node name="PowerUpHud" type="CanvasLayer"]
+script = ExtResource("1_script")
+
+[node name="PowerUpNameLabel" type="Label" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = -100.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 40
+text = "GOKART - 7s"
+horizontal_alignment = 1
+
+[node name="PowerUpProgressBar" type="ProgressBar" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -100.0
+offset_right = 300.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 0
+max_value = 1.0
+value = 1.0
+show_percentage = false

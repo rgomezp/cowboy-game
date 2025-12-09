@@ -158,6 +158,9 @@ func setup_managers():
 	powerup_manager.powerup_activated.connect(_on_powerup_activated)
 	powerup_manager.powerup_deactivated.connect(_on_powerup_deactivated)
 	$PowerUpUI.powerup_button_pressed.connect(powerup_manager.on_powerup_button_pressed)
+	
+	# Initialize powerup HUD
+	$PowerUpHud.initialize(powerup_manager)
 
 func setup_music():
 	# Load the music file

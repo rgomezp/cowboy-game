@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://dr27swiw8tr53"]
+[gd_scene load_steps=11 format=3 uid="uid://dr27swiw8tr53"]
 
 [ext_resource type="PackedScene" uid="uid://dm0p5nld2v1jj" path="res://scenes/parallax_background.tscn" id="1_0wfyh"]
 [ext_resource type="Script" uid="uid://b5b5emo3780tp" path="res://scenes/main.gd" id="1_jyhfs"]
@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://dyu21k2bbgc75" path="res://scenes/special_event_buttons.tscn" id="7_buttons"]
 [ext_resource type="PackedScene" uid="uid://csa2shhjoqkjt" path="res://scenes/special_event_hud.tscn" id="8_hud"]
 [ext_resource type="PackedScene" uid="uid://bxlt3s74ivsqp" path="res://scenes/powerup_ui.tscn" id="9_powerup"]
+[ext_resource type="PackedScene" uid="uid://b8k3m4n5p6q7r" path="res://scenes/powerup_hud.tscn" id="10_powerup_hud"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_jyhfs")
@@ -33,6 +34,8 @@ position = Vector2(540, 960)
 [node name="SpecialEventHud" parent="." instance=ExtResource("8_hud")]
 
 [node name="PowerUpUI" parent="." instance=ExtResource("9_powerup")]
+
+[node name="PowerUpHud" parent="." instance=ExtResource("10_powerup_hud")]
 
 [node name="GameOver" parent="." instance=ExtResource("6_tefeu")]
 process_mode = 2
