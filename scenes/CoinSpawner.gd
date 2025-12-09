@@ -50,14 +50,14 @@ func update(delta: float, current_distance: int) -> Node:
 			var coin = spawn_wall_coin(current_distance)
 			wall_coins_spawned += 1
 			last_wall_coin_time = 0.0
-			
+
 			if wall_coins_spawned >= wall_coins_total:
 				# Finished spawning wall
 				is_spawning_wall = false
 				wall_coins_spawned = 0
 				last_wall_time = 0.0
 				next_wall_interval = randf_range(5.0, 10.0)  # Schedule next wall
-			
+
 			return coin
 	else:
 		# Check if it's time to start a new wall
@@ -67,7 +67,7 @@ func update(delta: float, current_distance: int) -> Node:
 			wall_coins_spawned = 0
 			last_wall_coin_time = 0.0
 			# Don't reset last_wall_time yet - we'll do it after the wall is complete
-	
+
 	# Handle regular random coin spawning (only when not spawning a wall)
 	if not is_spawning_wall:
 		last_coin_time += delta
@@ -76,12 +76,12 @@ func update(delta: float, current_distance: int) -> Node:
 			last_coin_time = 0.0
 			next_coin_interval = randf_range(0.5, 2.0)  # Spawn every 0.5-2 seconds
 			return coin
-	
+
 	return null
 
 func spawn_coin(current_distance: int) -> Node:
 	var coin = coin_scene.instantiate()
-	var obs_x: int = screen_size.x + current_distance + 100
+	var obs_x: int = int(screen_size.x + current_distance + GameConstants.SPAWN_OFFSET)
 	# Position coin above ground at various heights (all jump-reachable)
 	# Ground top is at 1600.5, so coins hover above it
 	var height_offset = coin_height_offsets[randi() % coin_height_offsets.size()]
@@ -95,7 +95,7 @@ func spawn_wall_coin(current_distance: int) -> Node:
 	# Space coins horizontally to create a wall effect
 	# Each coin is spaced 50 pixels apart horizontally
 	var horizontal_spacing: int = 50
-	var obs_x: int = screen_size.x + current_distance + 100 + (wall_coins_spawned * horizontal_spacing)
+	var obs_x: int = int(screen_size.x + current_distance + GameConstants.SPAWN_OFFSET + (wall_coins_spawned * horizontal_spacing))
 	# For wall coins, use random heights to create a more chaotic wall effect
 	var height_offset = coin_height_offsets[randi() % coin_height_offsets.size()]
 	var obs_y: int = int(ground_top_y + height_offset)
