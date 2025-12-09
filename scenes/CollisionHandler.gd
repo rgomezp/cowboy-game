@@ -5,13 +5,26 @@ signal player_bounced_on_butterfly(obstacle: Node)
 signal player_jumped_on_foe(foe: Node)
 
 var player: CharacterBody2D
+var main_node: Node = null  # Reference to main node to check powerup state
 
-func initialize(player_node: CharacterBody2D):
+func initialize(player_node: CharacterBody2D, main_node_ref: Node = null):
 	player = player_node
+	main_node = main_node_ref
 
 func handle_obstacle_collision(body: Node, obstacle: Node):
+	print("[CollisionHandler] handle_obstacle_collision called - body: ", body.name, " obstacle: ", obstacle.name)
 	# Check if body is the player (could be named "Player" or "Player2" depending on scene)
 	var is_player = body == player or body.name == "Player" or body.name == "Player2"
+	print("[CollisionHandler] is_player=", is_player, " body==player=", (body == player), " body.name=", body.name)
+
+	# If a shotgun target is already marked for destruction, ignore immediately
+	if main_node and main_node.powerup_manager:
+		var active_powerup = main_node.powerup_manager.get_active_powerup()
+		if active_powerup and active_powerup.name == "shotgun":
+			if active_powerup.destroyed_targets.has(obstacle):
+				print("[CollisionHandler] Obstacle already marked for shotgun destruction, ignoring collision")
+				return
+
 	if is_player:
 		# Coins handle their own collection, so skip them here
 		if obstacle.name == "Coin" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and "coin.gd" in obstacle.get_script().resource_path):
@@ -68,7 +81,62 @@ func handle_obstacle_collision(body: Node, obstacle: Node):
 				# Monitoring disabled, ignore
 				return
 
+		# Check if shotgun powerup is active and this obstacle is being destroyed by it
+		if main_node and main_node.powerup_manager:
+			var active_powerup = main_node.powerup_manager.get_active_powerup()
+			if active_powerup and active_powerup.name == "shotgun":
+				# If obstacle is already in destroyed_targets, ignore collision
+				if active_powerup.destroyed_targets.has(obstacle):
+					print("[CollisionHandler] Obstacle already being destroyed by shotgun, ignoring collision")
+					return
+
+				# Check if this is a valid target for shotgun (foe, butterfly, or TNT only - not Rock/Agave)
+				var is_tnt = obstacle.name == "TNT" or (
+					obstacle.get_script() != null
+					and obstacle.get_script().resource_path != null
+					and "tnt" in obstacle.get_script().resource_path.to_lower()
+				)
+				var is_valid_target = is_foe or is_butterfly or is_tnt
+
+				if is_valid_target:
+					# Check if obstacle is currently overlapping with GunProximityArea
+					# This handles the case where collision happens before area_entered signal fires
+					var should_destroy = false
+					if player.has_node("GunProximityArea"):
+						var gun_area = player.get_node("GunProximityArea")
+						if gun_area and gun_area.monitoring:
+							var overlapping_areas = gun_area.get_overlapping_areas()
+							print("[CollisionHandler] Checking overlap - obstacle: ", obstacle.name, " overlapping_areas count: ", overlapping_areas.size())
+							if overlapping_areas.has(obstacle):
+								should_destroy = true
+								print("[CollisionHandler] Obstacle overlaps with GunProximityArea")
+
+					# If not overlapping but shotgun is active and it's a valid target, destroy it anyway
+					# This is a safety fallback - if player is colliding with target while shotgun is active, destroy it
+					if not should_destroy:
+						# Check if target is in front of player (within reasonable range)
+						# Since collision happened, target is definitely close enough
+						should_destroy = true
+						print("[CollisionHandler] Shotgun active and valid target detected via collision - destroying: ", obstacle.name)
+
+					if should_destroy:
+						# Disable collision using deferred calls to avoid flushing queries error
+						if obstacle is Area2D:
+							obstacle.set_deferred("monitoring", false)
+							obstacle.set_deferred("monitorable", false)
+						if obstacle.has_node("CollisionPolygon2D"):
+							obstacle.get_node("CollisionPolygon2D").set_deferred("disabled", true)
+						if obstacle.has_node("CollisionShape2D"):
+							obstacle.get_node("CollisionShape2D").set_deferred("disabled", true)
+						if obstacle.has_node("CollisionBox"):
+							obstacle.get_node("CollisionBox").set_deferred("disabled", true)
+						# Trigger destruction using deferred call to avoid flushing queries error
+						# This handles race conditions where collision happens before area_entered signal
+						call_deferred("_trigger_shotgun_destruction", active_powerup, obstacle)
+						return
+
 		# Player hit the main collision but not the top - game over
+		print("[CollisionHandler] GAME OVER - Player hit obstacle: ", obstacle.name)
 		player_hit_obstacle.emit(obstacle)
 
 func _disable_foe_collisions(obstacle: Node):
@@ -110,9 +178,28 @@ func handle_top_collision(body: Node, obstacle: Node):
 			# Player jumped on the butterfly from the top - bounce
 			player_bounced_on_butterfly.emit(obstacle)
 
+func _trigger_shotgun_destruction(powerup: RefCounted, target: Node) -> void:
+	# Helper to trigger shotgun destruction from collision handler
+	# This handles the case where collision happens before area_entered signal
+	# Note: powerup is RefCounted (PowerUpBase), not Node
+	print("[CollisionHandler] _trigger_shotgun_destruction called for: ", target.name)
+	if powerup and is_instance_valid(target) and target is Area2D:
+		# Manually trigger the target entered handler
+		if powerup.has_method("_on_target_entered"):
+			print("[CollisionHandler] Calling _on_target_entered on powerup")
+			powerup._on_target_entered(target)
+		else:
+			print("[CollisionHandler] ERROR: powerup does not have _on_target_entered method")
+	else:
+		print("[CollisionHandler] ERROR: Invalid powerup or target - powerup=", powerup, " target=", target, " is_Area2D=", (target is Area2D))
+
 func connect_obstacle_signals(obstacle: Node):
 	# Skip coins - they handle their own collision detection
 	if obstacle.name == "Coin" or (obstacle.get_script() != null and obstacle.get_script().resource_path != null and "coin.gd" in obstacle.get_script().resource_path):
+		return
+
+	# Skip powerup-related Area2D nodes (like GunProximityArea)
+	if obstacle.name == "GunProximityArea":
 		return
 
 	# Only connect body_entered for Area2D nodes (butterflies, foes, etc.)
