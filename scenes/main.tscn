@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://c5rba73xh0cs3" path="res://scenes/game_over.tscn" id="6_tefeu"]
 [ext_resource type="PackedScene" uid="uid://dyu21k2bbgc75" path="res://scenes/special_event_buttons.tscn" id="7_buttons"]
 [ext_resource type="PackedScene" uid="uid://csa2shhjoqkjt" path="res://scenes/special_event_hud.tscn" id="8_hud"]
+[ext_resource type="PackedScene" uid="uid://bxlt3s74ivsqp" path="res://scenes/powerup_ui.tscn" id="9_powerup"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_jyhfs")
@@ -30,6 +31,8 @@ position = Vector2(540, 960)
 [node name="SpecialEventButtons" parent="." instance=ExtResource("7_buttons")]
 
 [node name="SpecialEventHud" parent="." instance=ExtResource("8_hud")]
+
+[node name="PowerUpUI" parent="." instance=ExtResource("9_powerup")]
 
 [node name="GameOver" parent="." instance=ExtResource("6_tefeu")]
 process_mode = 2

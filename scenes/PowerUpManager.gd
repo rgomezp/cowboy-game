@@ -1,0 +1,202 @@
+extends Node
+
+signal powerup_activated(powerup_name: String)
+signal powerup_deactivated(powerup_name: String)
+
+# Powerup selection and management
+var available_powerups: Array[PowerUpBase] = []
+var current_powerup: PowerUpBase = null
+var powerup_ui: CanvasLayer = null
+
+# Selection phase
+var is_selecting: bool = false
+var selection_timer: float = 0.0
+const SELECTION_DURATION: float = 2.0  # 2 seconds of cycling
+var current_selection_index: int = 0
+var selection_cycle_interval: float = 0.15  # How fast to cycle (every 0.15 seconds)
+var last_cycle_time: float = 0.0
+
+# Display phase
+var is_displaying: bool = false
+var display_timer: float = 0.0
+const DISPLAY_DURATION: float = 12.0  # 12 seconds to use powerup
+
+# Blink phase
+var is_blinking: bool = false
+var blink_timer: float = 0.0
+var blink_count: int = 0
+const BLINK_DURATION: float = 0.3  # 1 second per blink
+const BLINK_COUNT: int = 3  # 3 blinks
+
+# Selected powerup name
+var selected_powerup_name: String = ""
+
+func initialize(powerups: Array[PowerUpBase], ui: CanvasLayer):
+	available_powerups = powerups
+	powerup_ui = ui
+
+func reset():
+	# Cancel any active powerup
+	if current_powerup and current_powerup.is_active:
+		current_powerup.deactivate(get_parent())
+		current_powerup = null
+	
+	# Reset all states
+	is_selecting = false
+	is_displaying = false
+	is_blinking = false
+	selection_timer = 0.0
+	display_timer = 0.0
+	blink_timer = 0.0
+	blink_count = 0
+	selected_powerup_name = ""
+	current_selection_index = 0
+	last_cycle_time = 0.0
+	
+	# Hide UI
+	if powerup_ui:
+		powerup_ui.hide_all_buttons()
+
+func start_powerup_selection():
+	# Start the selection process
+	is_selecting = true
+	is_displaying = false
+	is_blinking = false
+	selection_timer = 0.0
+	display_timer = 0.0
+	blink_timer = 0.0
+	blink_count = 0
+	current_selection_index = 0
+	last_cycle_time = 0.0
+	selected_powerup_name = ""
+	
+	# Show first powerup button
+	if powerup_ui and available_powerups.size() > 0:
+		powerup_ui.show_button(available_powerups[0].name)
+
+func update(delta: float, main_node: Node):
+	# Update active powerup
+	if current_powerup and current_powerup.is_active:
+		current_powerup.update(delta, main_node)
+		# Check if powerup naturally ended
+		if not current_powerup.is_active:
+			current_powerup = null
+			powerup_deactivated.emit(selected_powerup_name)
+	
+	# Handle selection phase
+	if is_selecting:
+		selection_timer += delta
+		last_cycle_time += delta
+		
+		# Cycle through powerups
+		if last_cycle_time >= selection_cycle_interval and available_powerups.size() > 0:
+			current_selection_index = (current_selection_index + 1) % available_powerups.size()
+			if powerup_ui:
+				powerup_ui.show_button(available_powerups[current_selection_index].name)
+			last_cycle_time = 0.0
+		
+		# After 2 seconds, select random powerup
+		if selection_timer >= SELECTION_DURATION:
+			select_random_powerup()
+	
+	# Handle display phase
+	if is_displaying:
+		display_timer += delta
+		
+		# After 12 seconds, start blinking
+		if display_timer >= DISPLAY_DURATION:
+			start_blinking()
+	
+	# Handle blink phase
+	if is_blinking:
+		blink_timer += delta
+		
+		# Toggle visibility every BLINK_DURATION (1 second per blink cycle)
+		if blink_timer >= BLINK_DURATION:
+			blink_count += 1
+			blink_timer = 0.0
+			
+			if powerup_ui:
+				# Toggle button visibility (alternate between visible and invisible)
+				var is_visible = (blink_count % 2 == 1)
+				powerup_ui.set_button_visible(selected_powerup_name, is_visible)
+			
+			# After 3 complete blink cycles (6 toggles = 3 visible + 3 invisible), waste the powerup
+			if blink_count >= BLINK_COUNT * 2:
+				waste_powerup()
+
+func select_random_powerup():
+	# Select a random powerup from available ones
+	if available_powerups.size() == 0:
+		return
+	
+	var random_index = randi() % available_powerups.size()
+	selected_powerup_name = available_powerups[random_index].name
+	
+	# Switch to display phase
+	is_selecting = false
+	is_displaying = true
+	display_timer = 0.0
+	
+	# Show selected powerup button
+	if powerup_ui:
+		powerup_ui.show_button(selected_powerup_name)
+
+func start_blinking():
+	is_displaying = false
+	is_blinking = true
+	blink_timer = 0.0
+	blink_count = 0
+	
+	# Ensure button is visible to start blinking
+	if powerup_ui:
+		powerup_ui.set_button_visible(selected_powerup_name, true)
+
+func waste_powerup():
+	# Powerup was not used in time
+	is_blinking = false
+	selected_powerup_name = ""
+	
+	# Hide UI
+	if powerup_ui:
+		powerup_ui.hide_all_buttons()
+
+func on_powerup_button_pressed(powerup_name: String):
+	# Player pressed a powerup button
+	if not is_displaying or powerup_name != selected_powerup_name:
+		return  # Not the right time or wrong powerup
+	
+	# Find and activate the powerup
+	for powerup in available_powerups:
+		if powerup.name == powerup_name:
+			activate_powerup(powerup)
+			break
+
+func activate_powerup(powerup: PowerUpBase):
+	# Activate the powerup
+	current_powerup = powerup
+	powerup.activate(get_parent())
+	
+	# Hide UI
+	if powerup_ui:
+		powerup_ui.hide_all_buttons()
+	
+	# Reset states
+	is_selecting = false
+	is_displaying = false
+	is_blinking = false
+	selected_powerup_name = ""
+	
+	powerup_activated.emit(powerup.name)
+
+func is_powerup_active() -> bool:
+	return current_powerup != null and current_powerup.is_active
+
+func get_active_powerup() -> PowerUpBase:
+	return current_powerup
+
+func get_speed_modifier() -> float:
+	if current_powerup and current_powerup.is_active:
+		if current_powerup.has_method("get_speed_modifier"):
+			return current_powerup.get_speed_modifier()
+	return 1.0

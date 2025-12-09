@@ -25,6 +25,13 @@ var FoeSpawner = preload("res://scenes/FoeSpawner.gd")
 var FoeManager = preload("res://scenes/FoeManager.gd")
 var CollisionHandler = preload("res://scenes/CollisionHandler.gd")
 var SpecialEventManager = preload("res://scenes/SpecialEventManager.gd")
+var PowerUpManager = preload("res://scenes/PowerUpManager.gd")
+# Preload PowerUpBase first to ensure class_name is registered
+# This ensures the class is available when other powerup scripts extend it
+@warning_ignore("unused_private_class_variable")
+var _powerup_base = preload("res://scenes/powerups/PowerUpBase.gd")
+var GokartPowerUp = preload("res://scenes/powerups/GokartPowerUp.gd")
+var ShotgunPowerUp = preload("res://scenes/powerups/ShotgunPowerUp.gd")
 
 # Manager instances
 var score_manager: Node
@@ -36,6 +43,7 @@ var foe_spawner: Node
 var foe_manager: Node
 var collision_handler: Node
 var special_event_manager: Node
+var powerup_manager: Node
 
 const PLAYER_START_POS := Vector2i(19, 166)
 const CAMERA_START_POS := Vector2i(540, 960)
@@ -122,7 +130,7 @@ func setup_managers():
 	collision_handler.player_hit_obstacle.connect(_on_player_hit_obstacle)
 	collision_handler.player_bounced_on_butterfly.connect(_on_player_bounced_on_butterfly)
 	collision_handler.player_jumped_on_foe.connect(_on_player_jumped_on_foe)
-	collision_handler.initialize($Player)
+	collision_handler.initialize($Player, self)
 
 	special_event_manager = SpecialEventManager.new()
 	add_child(special_event_manager)
@@ -134,6 +142,17 @@ func setup_managers():
 	# Connect button signals
 	$SpecialEventButtons.button_pressed.connect(_on_special_button_pressed)
 	$SpecialEventButtons.buttons_hidden.connect(_on_special_buttons_hidden)
+
+	# Initialize powerup manager
+	powerup_manager = PowerUpManager.new()
+	add_child(powerup_manager)
+	var gokart_powerup = GokartPowerUp.new()
+	var shotgun_powerup = ShotgunPowerUp.new()
+	var powerups: Array[PowerUpBase] = [gokart_powerup,shotgun_powerup]
+	powerup_manager.initialize(powerups, $PowerUpUI)
+	powerup_manager.powerup_activated.connect(_on_powerup_activated)
+	powerup_manager.powerup_deactivated.connect(_on_powerup_deactivated)
+	$PowerUpUI.powerup_button_pressed.connect(powerup_manager.on_powerup_button_pressed)
 
 func setup_music():
 	# Load the music file
@@ -164,6 +183,8 @@ func new_game():
 	foe_spawner.reset()
 	foe_manager.reset()
 	special_event_manager.reset()
+	if powerup_manager:
+		powerup_manager.reset()
 
 	# Ensure all spawners are enabled (in case game was restarted during a special event)
 	set_all_spawning_enabled(true)
@@ -194,11 +215,18 @@ func new_game():
 # Game logic happens here
 func _process(delta: float) -> void:
 	if game_running:
+		# Update powerup manager (only if initialized)
+		if powerup_manager:
+			powerup_manager.update(delta, self)
+
 		# Calculate speed based on distance traveled, not score
 		@warning_ignore("integer_division")
 		speed = START_SPEED + distance / SPEED_MODIFIER
 		if speed > MAX_SPEED:
 			speed = MAX_SPEED
+
+		# Apply powerup speed modifier (e.g., from gokart)
+		speed *= powerup_manager.get_speed_modifier()
 
 		# Generate obstacles
 		var new_obstacle = obstacle_manager.generate_obstacle(distance)
@@ -242,8 +270,10 @@ func _process(delta: float) -> void:
 		# Cleanup off-screen foes
 		foe_manager.cleanup_off_screen_foes($Camera2D.position.x)
 
-		# Update special event manager
-		special_event_manager.update(delta, speed, $Camera2D.position.x)
+		# Update special event manager (only if no powerup is active)
+		# Special events are paused during powerups, but will resume when powerup ends
+		if not powerup_manager.is_powerup_active():
+			special_event_manager.update(delta, speed, $Camera2D.position.x)
 
 		# Update score delta display timer
 		if score_delta_timer > 0.0:
@@ -398,10 +428,12 @@ func _on_special_event_started():
 	special_button_reaction_time = -1.0
 
 func _on_special_event_ended():
-	# Re-enable all spawners
+	# Re-enable all spawners immediately, regardless of powerup status
+	# This ensures spawning resumes even if a powerup is active
 	set_obstacle_spawning_enabled(true)
 	set_foe_spawning_enabled(true)
 	set_butterfly_spawning_enabled(true)
+	print("[Main] Special event ended - spawning re-enabled")
 
 func _on_special_button_pressed(is_good: bool):
 	# Only process button presses if sprite has entered view
@@ -436,6 +468,8 @@ func _on_special_button_pressed(is_good: bool):
 		special_button_reaction_time = -1.0  # Don't show time for wrong answers
 
 	# Buttons are already hidden by the button press handler (which sets force_hide = true)
+	# Mark that a button was pressed - event will end when special leaves screen
+	special_event_manager.mark_button_pressed()
 
 func _on_special_buttons_hidden(was_pressed: bool, too_early: bool):
 	# Show outcome message when buttons are hidden
@@ -447,6 +481,8 @@ func _on_special_buttons_hidden(was_pressed: bool, too_early: bool):
 		# Button was pressed - show result based on whether it was correct or wrong
 		if special_button_result == "correct":
 			$SpecialEventHud.show_outcome("nice", special_button_reaction_time)
+			# Trigger powerup selection on correct answer
+			powerup_manager.start_powerup_selection()
 		elif special_button_result == "wrong":
 			$SpecialEventHud.show_outcome("oops")
 		else:
@@ -455,3 +491,29 @@ func _on_special_buttons_hidden(was_pressed: bool, too_early: bool):
 	else:
 		# No button was pressed - show "Miss"
 		$SpecialEventHud.show_outcome("miss")
+
+func _on_powerup_button_pressed(_powerup_name: String):
+	# This is handled by PowerUpManager, but we can add additional logic here if needed
+	pass
+
+func _on_powerup_activated(_powerup_name: String):
+	# Powerup was activated - mark that event should end when special leaves screen
+	# Don't end immediately - let special object leave screen naturally
+	# This ensures spawning resumes so the powerup has targets to use
+	if special_event_manager.get_event_active():
+		print("[Main] Powerup activated during special event - will end when special leaves screen")
+		# Mark button as pressed so event ends when special leaves, but don't end immediately
+		special_event_manager.mark_button_pressed()
+		# Re-enable spawning immediately so powerup has targets
+		set_obstacle_spawning_enabled(true)
+		set_foe_spawning_enabled(true)
+		set_butterfly_spawning_enabled(true)
+
+func _on_powerup_deactivated(_powerup_name: String):
+	# Powerup was deactivated - ensure spawning is enabled
+	# This handles the case where a special event ended while powerup was active
+	# (special events don't update during powerups, so they might have ended via timeout)
+	set_obstacle_spawning_enabled(true)
+	set_foe_spawning_enabled(true)
+	set_butterfly_spawning_enabled(true)
+	print("[Main] Powerup deactivated - ensuring spawning is enabled")
