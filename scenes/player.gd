@@ -27,7 +27,28 @@ func _is_shotgun_active() -> bool:
 	var active_powerup = powerup_manager.get_active_powerup()
 	return active_powerup != null and active_powerup.name == "shotgun" and active_powerup.is_active
 
+func _is_gokart_active() -> bool:
+	# Check if gokart power up is active
+	var main_node = get_parent()
+	if not main_node or not "powerup_manager" in main_node:
+		return false
+
+	var powerup_manager = main_node.powerup_manager
+	if not powerup_manager:
+		return false
+
+	var active_powerup = powerup_manager.get_active_powerup()
+	return active_powerup != null and active_powerup.name == "gokart" and active_powerup.is_active
+
 func _get_animation_name(base_name: String) -> String:
+	# Prioritize gokart animation if active (single animation for all states)
+	if _is_gokart_active():
+		if $AnimatedSprite2D.sprite_frames.has_animation("kart"):
+			return "kart"
+		# Fallback to "gokart" if "kart" doesn't exist
+		if $AnimatedSprite2D.sprite_frames.has_animation("gokart"):
+			return "gokart"
+
 	# Return the shotgun version of the animation if shotgun is active, otherwise return base name
 	if _is_shotgun_active():
 		var shotgun_name = base_name + "_shotgun"
