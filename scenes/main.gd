@@ -56,6 +56,8 @@ var screen_size : Vector2i
 var game_running : bool
 var ground_height : int
 var distance : int = 0  # Track actual distance traveled, separate from score
+var game_over_in_progress : bool = false  # Track if game over is already triggered
+var explosion_in_progress : bool = false  # Track if TNT explosion is playing (stops movement)
 
 # Score delta display variables
 var score_delta_timer: float = 0.0
@@ -174,6 +176,10 @@ func reset_music():
 	$MusicPlayer.play()
 
 func new_game():
+	# Reset game over and explosion flags
+	game_over_in_progress = false
+	explosion_in_progress = false
+	
 	# Reset managers
 	score_manager.reset()
 	obstacle_manager.reset()
@@ -248,16 +254,17 @@ func _process(delta: float) -> void:
 		if foe:
 			foe_manager.add_foe(foe)
 
-		# Move player position & camera
-		$Player.position.x += speed
-		$Camera2D.position.x += speed
+		# Move player position & camera (only if not in explosion)
+		if not explosion_in_progress:
+			$Player.position.x += speed
+			$Camera2D.position.x += speed
 
-		# Update distance based on actual movement
-		distance += int(speed)
+			# Update distance based on actual movement
+			distance += int(speed)
 
-		# Update score (separate from distance)
-		# Don't show delta for continuous movement score updates
-		score_manager.add_score(int(speed), false)
+			# Update score (separate from distance)
+			# Don't show delta for continuous movement score updates
+			score_manager.add_score(int(speed), false)
 
 		# Update ground position
 		if $Camera2D.position.x - $Ground.position.x > screen_size.x * 1.5:
@@ -352,8 +359,31 @@ func _on_foe_spawned(_foe: Node):
 func _on_foe_added(foe: Node):
 	collision_handler.connect_obstacle_signals(foe)
 
-func _on_player_hit_obstacle(_obstacle: Node):
-	game_over()
+func _on_player_hit_obstacle(obstacle: Node):
+	# Prevent multiple game over triggers
+	if game_over_in_progress:
+		return
+	
+	# Check if obstacle is TNT - if so, play explosion animation before game over
+	if _is_tnt(obstacle):
+		# Remove from obstacle manager immediately
+		if obstacle_manager.obstacles.has(obstacle):
+			obstacle_manager.obstacles.erase(obstacle)
+		
+		# Trigger explosion (from_collision=true to handle player bounce)
+		if obstacle.has_method("trigger_explosion"):
+			# Connect to explosion finished signal before triggering
+			if obstacle.has_signal("explosion_finished"):
+				# Disconnect first to avoid duplicate connections
+				if obstacle.explosion_finished.is_connected(_on_tnt_explosion_finished_game_over):
+					obstacle.explosion_finished.disconnect(_on_tnt_explosion_finished_game_over)
+				obstacle.explosion_finished.connect(_on_tnt_explosion_finished_game_over)
+			obstacle.trigger_explosion(true)
+		else:
+			# Fallback if script not attached
+			game_over()
+	else:
+		game_over()
 
 func _on_player_bounced_on_butterfly(obstacle: Node):
 	# Player jumped on the butterfly from the top - bounce and destroy it
@@ -389,10 +419,39 @@ func _on_player_jumped_on_foe(foe: Node):
 		score_manager.add_score(200 * 100, true)  # Show delta for bonus event
 
 func game_over():
+	# Prevent multiple game over calls
+	if game_over_in_progress:
+		return
+	game_over_in_progress = true
+	
 	score_manager.check_high_score()
 	get_tree().paused = true
 	game_running = false
 	$GameOver.show()
+
+func _is_tnt(obstacle: Node) -> bool:
+	# Check if obstacle is TNT by name or script path
+	if obstacle.name == "TNT":
+		return true
+	if obstacle.get_script() != null and obstacle.get_script().resource_path != null:
+		if "tnt" in obstacle.get_script().resource_path.to_lower():
+			return true
+	# Check scene file path if available
+	if obstacle.has_method("get_scene_file_path"):
+		var scene_path = obstacle.get_scene_file_path()
+		if scene_path and "tnt" in scene_path.to_lower():
+			return true
+	return false
+
+func set_explosion_in_progress(value: bool) -> void:
+	# Setter method for TNT script to control explosion state
+	explosion_in_progress = value
+
+func _on_tnt_explosion_finished_game_over() -> void:
+	# Trigger game over after explosion animation finishes
+	# Reset explosion flag (though game_over will pause anyway)
+	explosion_in_progress = false
+	game_over()
 
 # Spawning control methods for special events
 func set_obstacle_spawning_enabled(enabled: bool):

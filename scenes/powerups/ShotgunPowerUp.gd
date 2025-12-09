@@ -307,47 +307,17 @@ func _destroy_butterfly(target: Node) -> void:
 	main_node.score_manager.add_score(100 * 100, true)
 
 func _destroy_tnt(target: Node) -> void:
-	# Play explosion animation before removing TNT
-	if target.has_node("AnimatedSprite2D"):
-		var animated_sprite = target.get_node("AnimatedSprite2D")
-		if animated_sprite and animated_sprite.sprite_frames:
-			# Check if explosion animation exists
-			if animated_sprite.sprite_frames.has_animation("explosion"):
-				# Disable looping for explosion animation (safe since each instance has its own resource)
-				animated_sprite.sprite_frames.set_animation_loop("explosion", false)
-				# Play explosion animation
-				animated_sprite.play("explosion")
-				
-				# Calculate animation duration: sum of frame durations / speed
-				var frame_count = animated_sprite.sprite_frames.get_frame_count("explosion")
-				var frame_duration = 0.0
-				for i in range(frame_count):
-					frame_duration += animated_sprite.sprite_frames.get_frame_duration("explosion", i)
-				var animation_speed = animated_sprite.sprite_frames.get_animation_speed("explosion")
-				var total_duration = frame_duration / animation_speed if animation_speed > 0 else frame_duration
-				
-				# Create a timer to clean up after animation finishes
-				var timer = target.get_tree().create_timer(total_duration)
-				timer.timeout.connect(_on_tnt_explosion_finished.bind(target))
-				
-				# Remove from obstacle manager's list but don't queue_free yet
-				if main_node.obstacle_manager.obstacles.has(target):
-					main_node.obstacle_manager.obstacles.erase(target)
-				# Award points for destroying TNT
-				main_node.score_manager.add_score(50 * 100, true)
-				return
-	
-	# Fallback: if no AnimatedSprite2D or explosion animation, remove immediately
+	# Remove from obstacle manager's list immediately
 	if main_node.obstacle_manager.obstacles.has(target):
 		main_node.obstacle_manager.obstacles.erase(target)
 	
-	if is_instance_valid(target):
-		target.queue_free()
-	
 	# Award points for destroying TNT
 	main_node.score_manager.add_score(50 * 100, true)
-
-func _on_tnt_explosion_finished(target: Node) -> void:
-	# Clean up TNT after explosion animation finishes
-	if is_instance_valid(target):
-		target.queue_free()
+	
+	# Use TNT's own explosion method (from_collision=false since this is from shotgun)
+	if target.has_method("trigger_explosion"):
+		target.trigger_explosion(false)
+	else:
+		# Fallback: if script not attached, remove immediately
+		if is_instance_valid(target):
+			target.queue_free()
