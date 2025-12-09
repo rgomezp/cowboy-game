@@ -471,6 +471,7 @@ func _on_special_button_pressed(is_good: bool):
 
 	# Get the timer value (time since sprite entered view)
 	var reaction_time = buttons_ui.get_timer_value()
+	print("[Main] _on_special_button_pressed: reaction_time=", reaction_time, ", sprite_entered_view=", buttons_ui.has_sprite_entered_view())
 
 	# Player pressed a button - check if they got it right
 	var special_path = special_event_manager.get_current_special_scene_path()
