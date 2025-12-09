@@ -80,6 +80,7 @@ size = Vector2(96.5, 58.5)
 size = Vector2(78.5, 60.5)
 
 [node name="Butterfly" type="Area2D"]
+monitorable = true
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 texture_filter = 1

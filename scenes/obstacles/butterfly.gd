@@ -34,11 +34,11 @@ func _disable_collisions():
 func destroy():
 	if is_destroyed:
 		return
-	
+
 	is_destroyed = true
 	# Defer disabling collisions to avoid flushing queries error
 	call_deferred("_disable_collisions")
-	
+
 	# Play the destroy animation
 	play("destroy")
 
