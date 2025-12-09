@@ -65,10 +65,33 @@ func generate_obstacle(current_distance: int) -> Node:
 	var obs_type = obstacle_types[randi() % obstacle_types.size()]
 	var obs = obs_type.instantiate()
 
-	var obs_sprite = obs.get_node("Sprite2D")
-	var obs_height = obs_sprite.texture.get_height()
-	var obs_scale = obs_sprite.scale
-	var obs_sprite_offset = obs_sprite.position
+	# Handle both Sprite2D and AnimatedSprite2D
+	var obs_sprite = null
+	var obs_height = 0.0
+	var obs_scale = Vector2(1, 1)
+	var obs_sprite_offset = Vector2(0, 0)
+	
+	# Try to get Sprite2D first
+	if obs.has_node("Sprite2D"):
+		obs_sprite = obs.get_node("Sprite2D")
+		if obs_sprite and obs_sprite.texture:
+			obs_height = obs_sprite.texture.get_height()
+			obs_scale = obs_sprite.scale
+			obs_sprite_offset = obs_sprite.position
+	# If not found, try AnimatedSprite2D
+	elif obs.has_node("AnimatedSprite2D"):
+		obs_sprite = obs.get_node("AnimatedSprite2D")
+		if obs_sprite and obs_sprite.sprite_frames:
+			# Get the first frame's texture to determine height
+			var first_frame = obs_sprite.sprite_frames.get_frame_texture("default", 0)
+			if first_frame:
+				obs_height = first_frame.get_height()
+			obs_scale = obs_sprite.scale
+			obs_sprite_offset = obs_sprite.position
+	
+	# Fallback if we couldn't get sprite info
+	if obs_height == 0.0:
+		obs_height = 50.0  # Default fallback height
 
 	var ground_top_y = ground_sprite.offset.y
 
