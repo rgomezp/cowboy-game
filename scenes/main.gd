@@ -165,6 +165,9 @@ func new_game():
 	foe_manager.reset()
 	special_event_manager.reset()
 
+	# Ensure all spawners are enabled (in case game was restarted during a special event)
+	set_all_spawning_enabled(true)
+
 	game_running = false
 	get_tree().paused = false
 	distance = 0  # Reset distance
