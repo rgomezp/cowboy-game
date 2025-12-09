@@ -69,6 +69,9 @@ func _ready() -> void:
 	# Hide score delta label initially
 	$Hud.get_node("ScoreValueDelta").hide()
 
+	# Setup music
+	setup_music()
+
 	new_game()
 
 func setup_managers():
@@ -132,6 +135,25 @@ func setup_managers():
 	$SpecialEventButtons.button_pressed.connect(_on_special_button_pressed)
 	$SpecialEventButtons.buttons_hidden.connect(_on_special_buttons_hidden)
 
+func setup_music():
+	# Load the music file
+	var music_stream = load("res://assets/audio/songs/desert.mp3")
+	if music_stream:
+		$MusicPlayer.stream = music_stream
+		# Set music to loop (for AudioStreamMP3, AudioStreamOggVorbis, etc.)
+		if music_stream is AudioStreamMP3:
+			music_stream.loop = true
+		elif music_stream is AudioStreamOggVorbis:
+			music_stream.loop = true
+		# Start playing
+		$MusicPlayer.play()
+
+func reset_music():
+	# Stop the music and restart from the beginning
+	if $MusicPlayer.playing:
+		$MusicPlayer.stop()
+	$MusicPlayer.play()
+
 func new_game():
 	# Reset managers
 	score_manager.reset()
@@ -161,6 +183,9 @@ func new_game():
 	var delta_label = $Hud.get_node("ScoreValueDelta")
 	delta_label.hide()
 	score_delta_timer = 0.0
+
+	# Reset music to play from the beginning
+	reset_music()
 
 
 # Game logic happens here
