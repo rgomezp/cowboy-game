@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://b5p5uoo5ric43"]
+[gd_scene load_steps=31 format=3 uid="uid://b5p5uoo5ric43"]
 
 [ext_resource type="Texture2D" uid="uid://c738m7y10seg4" path="res://assets/img/sprites/player/blue_suit/idle.png" id="1_player_sprite"]
 [ext_resource type="Script" uid="uid://cg0fiueawokkh" path="res://scenes/player.gd" id="1_qu4a1"]
@@ -181,7 +181,10 @@ size = Vector2(14.142851, 30.999992)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_qu4a1"]
 size = Vector2(14.142853, 28)
 
-[node name="Player2" type="CharacterBody2D"]
+[sub_resource type="CircleShape2D" id="CircleShape2D_tuyoq"]
+radius = 75.16948
+
+[node name="Player" type="CharacterBody2D"]
 z_index = 1
 texture_filter = 1
 scale = Vector2(7, 7)
@@ -203,3 +206,13 @@ shape = SubResource("RectangleShape2D_mdl7e")
 position = Vector2(22.357138, 170.99992)
 scale = Vector2(0.99999976, 0.99999976)
 shape = SubResource("RectangleShape2D_qu4a1")
+
+[node name="GunProximityArea" type="Area2D" parent="."]
+position = Vector2(66.21427, 92.642845)
+collision_layer = 0
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GunProximityArea"]
+position = Vector2(-43.92856, 76.78572)
+scale = Vector2(0.9999998, 0.9999998)
+shape = SubResource("CircleShape2D_tuyoq")
