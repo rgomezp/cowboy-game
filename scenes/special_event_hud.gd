@@ -96,11 +96,9 @@ func show_outcome(outcome_type: String, time_seconds: float = -1.0):
 			label_settings.outline_size = 8
 			label_settings.outline_color = Color(0, 0, 0, 1)  # Black outline
 			# Show timing only for correct answers
-			# Subtract 1.0 second because the sprite actually entered view 1 second earlier
-			# than when on_sprite_entered_view() is called
+			# time_seconds is the actual reaction time since sprite entered view
 			if timing_label and time_seconds >= 0.0:
-				var adjusted_time = max(0.0, time_seconds - 1.0)
-				var time_text = "%.2f sec" % adjusted_time
+				var time_text = "%.2f sec" % time_seconds
 				timing_label.text = time_text
 				timing_label.visible = true
 				# Apply same label settings for consistency
