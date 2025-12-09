@@ -44,9 +44,9 @@ func sync_distance(current_distance: int):
 		# Use a value slightly less than min_spacing to ensure spawning happens soon
 		last_foe_distance = current_distance - 10000
 		print("[FoeSpawner] sync_distance: current_distance=", current_distance,
-		      ", old_last_foe_distance=", old_last_distance,
-		      ", new_last_foe_distance=", last_foe_distance,
-		      ", distance_since_last=", current_distance - last_foe_distance)
+			  ", old_last_foe_distance=", old_last_distance,
+			  ", new_last_foe_distance=", last_foe_distance,
+			  ", distance_since_last=", current_distance - last_foe_distance)
 
 func is_spawning_enabled() -> bool:
 	return spawning_enabled
@@ -76,11 +76,15 @@ func update(current_distance: int) -> Node:
 		return null
 	if should_spawn_foe(current_distance):
 		var foe = spawn_foe(current_distance)
-		var old_last_distance = last_foe_distance
-		last_foe_distance = current_distance
-		print("[FoeSpawner] update: SPAWNED foe at distance=", current_distance,
-		      ", position=(", foe.position.x, ", ", foe.position.y, "), last_foe_distance: ", old_last_distance, " -> ", last_foe_distance)
-		return foe
+		if foe:
+			var old_last_distance = last_foe_distance
+			last_foe_distance = current_distance
+			print("[FoeSpawner] update: SPAWNED foe at distance=", current_distance,
+				  ", position=(", foe.position.x, ", ", foe.position.y, "), last_foe_distance: ", old_last_distance, " -> ", last_foe_distance)
+			return foe
+		else:
+			# Spawn was skipped due to position conflict, don't update last_foe_distance
+			print("[FoeSpawner] update: Spawn skipped at distance=", current_distance, " due to position conflict")
 	return null
 
 func spawn_foe(current_distance: int) -> Node:
