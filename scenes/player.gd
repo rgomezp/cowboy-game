@@ -65,14 +65,25 @@ func _physics_process(delta: float) -> void:
 	var current_gravity = GLIDE_GRAVITY if (has_double_jumped and not gokart_active) else GRAVITY
 	velocity.y += current_gravity * delta
 
+	# Update collision shapes - do this before move_and_slide to ensure proper collision detection
 	if gokart_active:
 		# When gokart is active, use kart collision shape
 		$KartCollisionShape.disabled = false
 		$RunCollisionShape.disabled = true
 		$SlideCollisionShape.disabled = true
+		# If on ground, ensure velocity.y is not positive to prevent falling through
+		if is_on_floor() and velocity.y > 0:
+			velocity.y = 0
 	else:
 		# When gokart is not active, use normal collision shapes
 		$KartCollisionShape.disabled = true
+		# Ensure at least one collision shape is enabled
+		if not is_sliding:
+			$RunCollisionShape.disabled = false
+			$SlideCollisionShape.disabled = true
+		else:
+			$RunCollisionShape.disabled = true
+			$SlideCollisionShape.disabled = false
 
 	# Update sliding timer
 	if is_sliding:
