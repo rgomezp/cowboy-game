@@ -74,7 +74,7 @@ func start_special_event():
 func handle_active_event(delta: float, current_speed: float, camera_x: float):
 	match event_phase:
 		"preparing":
-			# Wait 5 seconds with only coins
+			# Wait 3 seconds with only coins
 			prepare_timer += delta
 
 			# Show buttons after 3 second delay
