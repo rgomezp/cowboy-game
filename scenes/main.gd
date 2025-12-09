@@ -116,16 +116,19 @@ func setup_managers():
 	coin_manager.coin_added.connect(_on_coin_added)
 	coin_manager.initialize(screen_size)
 
+	foe_manager = FoeManager.new()
+	add_child(foe_manager)
+	foe_manager.foe_added.connect(_on_foe_added)
+	foe_manager.initialize(screen_size, obstacle_manager)
+
 	foe_spawner = FoeSpawner.new()
 	add_child(foe_spawner)
 	foe_spawner.foe_spawned.connect(_on_foe_spawned)
 	var foe_types: Array[PackedScene] = [furry_scene, troll_scene]
-	foe_spawner.initialize(foe_types, screen_size, ground_sprite)
-
-	foe_manager = FoeManager.new()
-	add_child(foe_manager)
-	foe_manager.foe_added.connect(_on_foe_added)
-	foe_manager.initialize(screen_size)
+	foe_spawner.initialize(foe_types, screen_size, ground_sprite, obstacle_manager, foe_manager)
+	
+	# Set cross-references for coordination
+	obstacle_manager.foe_manager = foe_manager
 
 	collision_handler = CollisionHandler.new()
 	add_child(collision_handler)

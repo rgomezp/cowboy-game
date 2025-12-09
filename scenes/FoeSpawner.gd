@@ -7,11 +7,16 @@ var last_foe_distance: int = 0
 var screen_size: Vector2i
 var ground_sprite: Sprite2D
 var spawning_enabled: bool = true  # Can be disabled for special events
+var obstacle_manager: Node = null  # Reference to obstacle manager for coordination
+var foe_manager: Node = null  # Reference to foe manager for coordination
+const MIN_SPAWN_DISTANCE: int = 500  # Minimum X distance between obstacles and foes
 
-func initialize(foe_scenes: Array[PackedScene], size: Vector2i, ground: Sprite2D):
+func initialize(foe_scenes: Array[PackedScene], size: Vector2i, ground: Sprite2D, obs_mgr: Node = null, foe_mgr: Node = null):
 	foe_types = foe_scenes
 	self.screen_size = size
 	self.ground_sprite = ground
+	obstacle_manager = obs_mgr
+	foe_manager = foe_mgr
 
 func reset():
 	last_foe_distance = 0
@@ -46,6 +51,26 @@ func sync_distance(current_distance: int):
 func is_spawning_enabled() -> bool:
 	return spawning_enabled
 
+func _is_position_too_close(x_position: int) -> bool:
+	# Check if position is too close to any existing obstacle
+	if obstacle_manager:
+		for obs in obstacle_manager.obstacles:
+			if not is_instance_valid(obs):
+				continue
+			var distance = abs(obs.position.x - x_position)
+			if distance < MIN_SPAWN_DISTANCE:
+				return true
+	
+	# Check if position is too close to any existing foe
+	if foe_manager:
+		for foe in foe_manager.foes:
+			if not is_instance_valid(foe):
+				continue
+			var distance = abs(foe.position.x - x_position)
+			if distance < MIN_SPAWN_DISTANCE:
+				return true
+	return false
+
 func update(current_distance: int) -> Node:
 	if not spawning_enabled:
 		return null
@@ -79,6 +104,20 @@ func spawn_foe(current_distance: int) -> Node:
 	var base_x = camera_x + screen_size.x + 100
 	var random_offset = randi_range(-50, 50)
 	var foe_x: int = base_x + random_offset
+	
+	# Check if position is too close to existing obstacles or foes
+	# Try multiple positions to find a valid spawn location
+	var attempts = 0
+	var max_attempts = 10
+	while _is_position_too_close(foe_x) and attempts < max_attempts:
+		random_offset = randi_range(-200, 200)  # Wider range for retry
+		foe_x = base_x + random_offset
+		attempts += 1
+	
+	# If still too close after attempts, skip spawning this foe
+	if _is_position_too_close(foe_x):
+		print("[FoeSpawner] spawn_foe: Position too close, skipping spawn at x=", foe_x)
+		return null
 	
 	# Position foe on the ground (stationary)
 	# Position so the bottom edge sits on top of the ground

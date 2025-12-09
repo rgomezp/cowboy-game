@@ -9,11 +9,14 @@ var last_obstacle_distance: int = 0  # Track distance, not score
 var screen_size: Vector2i
 var ground_sprite: Sprite2D
 var spawning_enabled: bool = true  # Can be disabled for special events
+var foe_manager: Node = null  # Reference to foe manager for coordination
+const MIN_SPAWN_DISTANCE: int = 500  # Minimum X distance between obstacles and foes
 
-func initialize(obstacle_scenes: Array[PackedScene], size: Vector2i, ground: Sprite2D):
+func initialize(obstacle_scenes: Array[PackedScene], size: Vector2i, ground: Sprite2D, foe_mgr: Node = null):
 	obstacle_types = obstacle_scenes
 	self.screen_size = size
 	self.ground_sprite = ground
+	foe_manager = foe_mgr
 
 func reset():
 	last_obstacle_distance = 0
@@ -55,6 +58,29 @@ func sync_distance(current_distance: int):
 
 func is_spawning_enabled() -> bool:
 	return spawning_enabled
+
+func is_position_too_close_to_foes(x_position: int) -> bool:
+	# Check if position is too close to any existing foe
+	if not foe_manager:
+		return false
+	
+	for foe in foe_manager.foes:
+		if not is_instance_valid(foe):
+			continue
+		var distance = abs(foe.position.x - x_position)
+		if distance < MIN_SPAWN_DISTANCE:
+			return true
+	return false
+
+func is_position_too_close_to_obstacles(x_position: int) -> bool:
+	# Check if position is too close to any existing obstacle
+	for obs in obstacles:
+		if not is_instance_valid(obs):
+			continue
+		var distance = abs(obs.position.x - x_position)
+		if distance < MIN_SPAWN_DISTANCE:
+			return true
+	return false
 
 func generate_obstacle(current_distance: int) -> Node:
 	if not spawning_enabled:
@@ -103,6 +129,20 @@ func generate_obstacle(current_distance: int) -> Node:
 	var base_x = camera_x + screen_size.x + 100
 	var random_offset = randi_range(-50, 50)
 	var obs_x: int = base_x + random_offset
+	
+	# Check if position is too close to existing obstacles or foes
+	# Try multiple positions to find a valid spawn location
+	var attempts = 0
+	var max_attempts = 10
+	while (is_position_too_close_to_obstacles(obs_x) or is_position_too_close_to_foes(obs_x)) and attempts < max_attempts:
+		random_offset = randi_range(-200, 200)  # Wider range for retry
+		obs_x = base_x + random_offset
+		attempts += 1
+	
+	# If still too close after attempts, skip spawning this obstacle
+	if is_position_too_close_to_obstacles(obs_x) or is_position_too_close_to_foes(obs_x):
+		print("[ObstacleManager] generate_obstacle: Position too close, skipping spawn at x=", obs_x)
+		return null
 
 	# Position obstacle so its bottom edge sits on top of the ground
 	var obs_y: int = ground_top_y - obs_sprite_offset.y - (obs_height * obs_scale.y / 2) + 10
