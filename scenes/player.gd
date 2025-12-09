@@ -14,6 +14,28 @@ var jump_peak_y: float = 0.0
 var is_tracking_peak: bool = false
 
 
+func _is_shotgun_active() -> bool:
+	# Check if shotgun power up is active
+	var main_node = get_parent()
+	if not main_node or not "powerup_manager" in main_node:
+		return false
+
+	var powerup_manager = main_node.powerup_manager
+	if not powerup_manager:
+		return false
+
+	var active_powerup = powerup_manager.get_active_powerup()
+	return active_powerup != null and active_powerup.name == "shotgun" and active_powerup.is_active
+
+func _get_animation_name(base_name: String) -> String:
+	# Return the shotgun version of the animation if shotgun is active, otherwise return base name
+	if _is_shotgun_active():
+		var shotgun_name = base_name + "_shotgun"
+		# Check if the animation exists before using it
+		if $AnimatedSprite2D.sprite_frames.has_animation(shotgun_name):
+			return shotgun_name
+	return base_name
+
 func _physics_process(delta: float) -> void:
 	# Use glide gravity if double jump has been used, otherwise use normal gravity
 	var current_gravity = GLIDE_GRAVITY if has_double_jumped else GRAVITY
@@ -35,7 +57,7 @@ func _physics_process(delta: float) -> void:
 		is_tracking_peak = false
 		jump_peak_y = 0.0
 		if not get_parent().game_running:
-			$AnimatedSprite2D.play("idle")
+			$AnimatedSprite2D.play(_get_animation_name("idle"))
 		else:
 			if Input.is_action_pressed("ui_accept"):
 				velocity.y = JUMP_VELOCITY
@@ -45,13 +67,13 @@ func _physics_process(delta: float) -> void:
 			elif Input.is_action_just_pressed("ui_down") and not is_sliding:
 				is_sliding = true
 				sliding_timer = 0.0
-				$AnimatedSprite2D.play("sliding")
+				$AnimatedSprite2D.play(_get_animation_name("sliding"))
 				$RunCollisionShape.disabled = true
 			elif is_sliding:
 				# Keep sliding animation playing and collision disabled
-				$AnimatedSprite2D.play("sliding")
+				$AnimatedSprite2D.play(_get_animation_name("sliding"))
 			else:
-				$AnimatedSprite2D.play("running")
+				$AnimatedSprite2D.play(_get_animation_name("running"))
 				$RunCollisionShape.disabled = false
 	else:
 		# Track the peak height while rising
@@ -60,18 +82,18 @@ func _physics_process(delta: float) -> void:
 				jump_peak_y = min(jump_peak_y, global_position.y)
 			else:  # Started falling, stop tracking
 				is_tracking_peak = false
-		
+
 		# Allow double jump only near the peak of the first jump
 		var distance_from_peak = abs(global_position.y - jump_peak_y)
 		if Input.is_action_just_pressed("ui_accept") and not has_double_jumped and distance_from_peak <= DOUBLE_JUMP_PEAK_TOLERANCE:
 			velocity.y = DOUBLE_JUMP_VELOCITY
 			has_double_jumped = true
 			is_tracking_peak = false
-		
+
 		# Play gliding animation if double jumped, otherwise play jumping
 		if has_double_jumped:
-			$AnimatedSprite2D.play("gliding")
+			$AnimatedSprite2D.play(_get_animation_name("gliding"))
 		else:
-			$AnimatedSprite2D.play("jumping")
+			$AnimatedSprite2D.play(_get_animation_name("jumping"))
 
 	move_and_slide()
