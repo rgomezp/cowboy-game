@@ -1,6 +1,6 @@
 [gd_scene load_steps=15 format=3 uid="uid://c18824mkmsmrm"]
 
-[ext_resource type="Script" path="res://scenes/foes/foe_base.gd" id="1_uk6g2"]
+[ext_resource type="Script" uid="uid://dvqk52j6j4pq1" path="res://scenes/foes/foe_base.gd" id="1_uk6g2"]
 [ext_resource type="Texture2D" uid="uid://cx7v4qynsu7wo" path="res://assets/img/foes/troll/troll_sprite_sheet.png" id="2_uk6g2"]
 [ext_resource type="Texture2D" uid="uid://cd2gtahtji5t8" path="res://assets/img/foes/troll/troll_destroy_sprite_sheet.png" id="3_ru58e"]
 
@@ -74,10 +74,10 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bjglj"]
-size = Vector2(208, 253)
+size = Vector2(208, 233)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dk2h7"]
-size = Vector2(191.5, 61)
+size = Vector2(191.5, 81)
 
 [node name="Troll" type="Area2D"]
 script = ExtResource("1_uk6g2")
@@ -91,12 +91,12 @@ animation = &"destroy"
 autoplay = "default"
 
 [node name="CollisionBox" type="CollisionShape2D" parent="."]
-position = Vector2(157, 199.5)
+position = Vector2(157, 209.5)
 shape = SubResource("RectangleShape2D_bjglj")
 
 [node name="CollisionBoxTop" type="Area2D" parent="."]
 position = Vector2(155.5, 48)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CollisionBoxTop"]
-position = Vector2(9.75, -6.5)
+position = Vector2(9.75, 3.5)
 shape = SubResource("RectangleShape2D_dk2h7")
