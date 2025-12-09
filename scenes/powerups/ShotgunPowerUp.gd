@@ -314,4 +314,5 @@ func _destroy_tnt(target: Node) -> void:
 	if is_instance_valid(target):
 		target.queue_free()
 	
-	# No points for TNT (just destroyed to prevent game over)
+	# Award points for destroying TNT
+	main_node.score_manager.add_score(50 * 100, true)
