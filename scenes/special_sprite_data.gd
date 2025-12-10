@@ -9,6 +9,7 @@ const SPRITE_QUALITY: Dictionary = {
 	"res://scenes/specials/smoker.tscn": true,      # true = "makes sense" (good)
 	"res://scenes/specials/hollywood_2.tscn": true, # true = "makes sense" (good)
 	"res://scenes/specials/rods_bbq.tscn": true,     # true = "makes sense" (good)
+	"res://scenes/specials/motorcycle.tscn": true,   # true = "makes sense" (good)
 	"res://scenes/specials/devil_plush.tscn": false, # false = "hwwat?" (bad)
 	"res://scenes/specials/man_baby.tscn": false,   # false = "hwwat?" (bad)
 	"res://scenes/specials/go_vegan.tscn": false,   # false = "hwwat?" (bad)
