@@ -200,3 +200,8 @@ func get_speed_modifier() -> float:
 		if current_powerup.has_method("get_speed_modifier"):
 			return current_powerup.get_speed_modifier()
 	return 1.0
+
+func has_unused_powerup() -> bool:
+	# Check if there's a powerup that's been selected but not yet activated
+	# This includes powerups in display phase or blinking phase
+	return is_displaying or is_blinking

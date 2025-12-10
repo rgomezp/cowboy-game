@@ -7,6 +7,7 @@ var special_scenes: Array[PackedScene] = []
 var screen_size: Vector2i
 var ground_sprite: Sprite2D
 var special_ground: Node  # Reference to the special ground node
+var powerup_manager: Node = null  # Reference to the powerup manager
 
 # Timing variables
 var time_since_last_event: float = 0.0
@@ -27,12 +28,13 @@ var buttons_shown: bool = false  # Track if buttons have been shown for this eve
 var button_pressed: bool = false  # Track if a button was pressed (don't end event until special leaves screen)
 var pending_cleanup: bool = false  # Track if we're waiting for special to leave screen before cleanup
 
-func initialize(special_scenes_param: Array[PackedScene], screen_size_param: Vector2i, ground_sprite_param: Sprite2D, special_ground_param: Node, buttons_ui_param: CanvasLayer):
+func initialize(special_scenes_param: Array[PackedScene], screen_size_param: Vector2i, ground_sprite_param: Sprite2D, special_ground_param: Node, buttons_ui_param: CanvasLayer, powerup_manager_param: Node = null):
 	special_scenes = special_scenes_param
 	screen_size = screen_size_param
 	ground_sprite = ground_sprite_param
 	special_ground = special_ground_param
 	buttons_ui = buttons_ui_param
+	powerup_manager = powerup_manager_param
 	schedule_next_event()
 
 func reset():
@@ -49,16 +51,24 @@ func reset():
 
 func schedule_next_event():
 	# Schedule next event in 15-45 seconds (15-45 seconds)
-	next_event_interval = randf_range(5.0, 15.0)
+	next_event_interval = randf_range(15.0, 45.0)
 	time_since_last_event = 0.0
 
 func update(delta: float, current_speed: float, camera_x: float) -> void:
 	if is_event_active:
 		handle_active_event(delta, current_speed, camera_x)
 	else:
-		# Check if it's time for a new event
-		time_since_last_event += delta
-		if time_since_last_event >= next_event_interval:
+		# Check if there's an unused powerup - if so, don't increment timer
+		var has_unused = false
+		if powerup_manager and powerup_manager.has_method("has_unused_powerup"):
+			has_unused = powerup_manager.has_unused_powerup()
+
+		# Only increment timer if there's no unused powerup
+		if not has_unused:
+			time_since_last_event += delta
+
+		# Check if it's time for a new event (only if no unused powerup)
+		if time_since_last_event >= next_event_interval and not has_unused:
 			start_special_event()
 
 func start_special_event():

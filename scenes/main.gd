@@ -137,18 +137,7 @@ func setup_managers():
 	collision_handler.player_jumped_on_foe.connect(_on_player_jumped_on_foe)
 	collision_handler.initialize($Player, self)
 
-	special_event_manager = SpecialEventManager.new()
-	add_child(special_event_manager)
-	special_event_manager.special_event_started.connect(_on_special_event_started)
-	special_event_manager.special_event_ended.connect(_on_special_event_ended)
-	var special_types: Array[PackedScene] = [texas_flag_scene, us_flag_scene, cheerleader_scene, smoker_scene, devil_plush_scene, man_baby_scene]
-	special_event_manager.initialize(special_types, screen_size, ground_sprite, $SpecialGround, $SpecialEventButtons)
-
-	# Connect button signals
-	$SpecialEventButtons.button_pressed.connect(_on_special_button_pressed)
-	$SpecialEventButtons.buttons_hidden.connect(_on_special_buttons_hidden)
-
-	# Initialize powerup manager
+	# Initialize powerup manager first (needed by special event manager)
 	powerup_manager = PowerUpManager.new()
 	add_child(powerup_manager)
 	var gokart_powerup = GokartPowerUp.new()
@@ -161,6 +150,17 @@ func setup_managers():
 	
 	# Initialize powerup HUD
 	$PowerUpHud.initialize(powerup_manager)
+
+	special_event_manager = SpecialEventManager.new()
+	add_child(special_event_manager)
+	special_event_manager.special_event_started.connect(_on_special_event_started)
+	special_event_manager.special_event_ended.connect(_on_special_event_ended)
+	var special_types: Array[PackedScene] = [texas_flag_scene, us_flag_scene, cheerleader_scene, smoker_scene, devil_plush_scene, man_baby_scene]
+	special_event_manager.initialize(special_types, screen_size, ground_sprite, $SpecialGround, $SpecialEventButtons, powerup_manager)
+
+	# Connect button signals
+	$SpecialEventButtons.button_pressed.connect(_on_special_button_pressed)
+	$SpecialEventButtons.buttons_hidden.connect(_on_special_buttons_hidden)
 
 func setup_music():
 	# Load the music file
