@@ -9,6 +9,7 @@ var ground_sprite: Sprite2D
 var spawning_enabled: bool = true  # Can be disabled for special events
 var obstacle_manager: Node = null  # Reference to obstacle manager for coordination
 var foe_manager: Node = null  # Reference to foe manager for coordination
+var difficulty_level: int = 1  # Current difficulty level
 const MIN_SPAWN_DISTANCE: int = 500  # Minimum X distance between obstacles and foes
 
 func initialize(foe_scenes: Array[PackedScene], size: Vector2i, ground: Sprite2D, obs_mgr: Node = null, foe_mgr: Node = null):
@@ -21,11 +22,27 @@ func initialize(foe_scenes: Array[PackedScene], size: Vector2i, ground: Sprite2D
 func reset():
 	last_foe_distance = 0
 
+func set_difficulty_level(level: int):
+	difficulty_level = level
+
 func should_spawn_foe(current_distance: int) -> bool:
 	var distance_since_last = current_distance - last_foe_distance
-	# More sparse than obstacles - spawn every 15000-30000 distance units
-	var min_spacing = randi_range(15000, 20000)
-	var max_spacing = randi_range(25000, 30000)
+	# Adjust spawn frequency based on difficulty level
+	var min_spacing: int
+	var max_spacing: int
+	if difficulty_level == 1:
+		# Level 1: infrequent spawns
+		min_spacing = randi_range(15000, 20000)
+		max_spacing = randi_range(25000, 30000)
+	elif difficulty_level == 2:
+		# Level 2: more frequent spawns
+		min_spacing = randi_range(10000, 15000)
+		max_spacing = randi_range(18000, 25000)
+	else:  # Level 3
+		# Level 3: even more frequent spawns
+		min_spacing = randi_range(8000, 12000)
+		max_spacing = randi_range(15000, 20000)
+	
 	var required_spacing = randi_range(min_spacing, max_spacing)
 	return distance_since_last >= required_spacing
 
@@ -71,23 +88,29 @@ func _is_position_too_close(x_position: int) -> bool:
 				return true
 	return false
 
-func update(current_distance: int) -> Node:
+func update(current_distance: int, camera_x: float) -> Node:
+	# Always spawn single foe (frequency adjusts based on difficulty)
 	if not spawning_enabled:
 		return null
-	if should_spawn_foe(current_distance):
-		var foe = spawn_foe(current_distance)
-		if foe:
-			var old_last_distance = last_foe_distance
-			last_foe_distance = current_distance
-			print("[FoeSpawner] update: SPAWNED foe at distance=", current_distance,
-				  ", position=(", foe.position.x, ", ", foe.position.y, "), last_foe_distance: ", old_last_distance, " -> ", last_foe_distance)
-			return foe
-		else:
-			# Spawn was skipped due to position conflict, don't update last_foe_distance
-			print("[FoeSpawner] update: Spawn skipped at distance=", current_distance, " due to position conflict")
-	return null
+	if not should_spawn_foe(current_distance):
+		return null
+	
+	# Use actual camera position passed from main.gd
+	var base_x = camera_x + screen_size.x + 100
+	
+	var foe = spawn_foe_at_position(current_distance, base_x)
+	if foe:
+		var old_last_distance = last_foe_distance
+		last_foe_distance = current_distance
+		print("[FoeSpawner] update: SPAWNED foe at distance=", current_distance,
+			  ", position=(", foe.position.x, ", ", foe.position.y, "), last_foe_distance: ", old_last_distance, " -> ", last_foe_distance)
+		return foe
+	else:
+		# Spawn was skipped due to position conflict, don't update last_foe_distance
+		print("[FoeSpawner] update: Spawn skipped at distance=", current_distance, " due to position conflict")
+		return null
 
-func spawn_foe(current_distance: int) -> Node:
+func spawn_foe_at_position(_current_distance: int, base_x_pos: int) -> Node:
 	var foe_type = foe_types[randi() % foe_types.size()]
 	var foe = foe_type.instantiate()
 	
@@ -100,14 +123,9 @@ func spawn_foe(current_distance: int) -> Node:
 	
 	var ground_top_y = self.ground_sprite.offset.y
 	
-	# Camera starts at 540, so calculate camera position from distance
-	# This ensures foes spawn off-camera ahead, not mid-screen
-	const CAMERA_START_X: int = 540
-	var camera_x = CAMERA_START_X + current_distance
 	# Add some randomness to the x position
-	var base_x = camera_x + screen_size.x + 100
 	var random_offset = randi_range(-50, 50)
-	var foe_x: int = base_x + random_offset
+	var foe_x: int = base_x_pos + random_offset
 	
 	# Check if position is too close to existing obstacles or foes
 	# Try multiple positions to find a valid spawn location
@@ -115,12 +133,13 @@ func spawn_foe(current_distance: int) -> Node:
 	var max_attempts = 10
 	while _is_position_too_close(foe_x) and attempts < max_attempts:
 		random_offset = randi_range(-200, 200)  # Wider range for retry
-		foe_x = base_x + random_offset
+		foe_x = base_x_pos + random_offset
 		attempts += 1
 	
 	# If still too close after attempts, skip spawning this foe
 	if _is_position_too_close(foe_x):
-		print("[FoeSpawner] spawn_foe: Position too close, skipping spawn at x=", foe_x)
+		print("[FoeSpawner] spawn_foe_at_position: Position too close, skipping spawn at x=", foe_x)
+		foe.queue_free()
 		return null
 	
 	# Position foe on the ground (stationary)
