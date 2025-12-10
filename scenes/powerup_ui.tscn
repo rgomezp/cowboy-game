@@ -10,27 +10,27 @@ script = ExtResource("1_script")
 
 [node name="GokartButton" type="TextureButton" parent="."]
 texture_filter = 1
-offset_left = 69.0
+offset_left = 811.0
 offset_top = 1334.0
-offset_right = 269.0
+offset_right = 1011.0
 offset_bottom = 1534.0
 texture_normal = ExtResource("2_gokart")
 stretch_mode = 5
 
 [node name="ShotgunButton" type="TextureButton" parent="."]
 texture_filter = 1
-offset_left = 69.0
+offset_left = 811.0
 offset_top = 1334.0
-offset_right = 269.0
+offset_right = 1011.0
 offset_bottom = 1534.0
 texture_normal = ExtResource("3_shotgun")
 stretch_mode = 5
 
 [node name="HeartButton" type="TextureButton" parent="."]
 texture_filter = 1
-offset_left = 69.0
+offset_left = 811.0
 offset_top = 1334.0
-offset_right = 269.0
+offset_right = 1011.0
 offset_bottom = 1534.0
 texture_normal = ExtResource("4_heart")
 stretch_mode = 5

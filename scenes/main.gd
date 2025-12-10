@@ -66,8 +66,8 @@ var player_immune : bool = false  # Track if player is in immunity period
 # Difficulty system
 var current_difficulty_level : int = 1
 const LEVEL_1_THRESHOLD : int = 0      # Start at level 1
-const LEVEL_2_THRESHOLD : int = 20000  # Switch to level 2 at 20k distance
-const LEVEL_3_THRESHOLD : int = 500000 # Switch to level 3 at 50k distance
+const LEVEL_2_THRESHOLD : int = 10000  # Switch to level 2 at 10k distance
+const LEVEL_3_THRESHOLD : int = 200000 # Switch to level 3 at 20k distance
 
 # Score delta display variables
 var score_delta_timer: float = 0.0
@@ -283,13 +283,13 @@ func _process(delta: float) -> void:
 		update_difficulty_level()
 
 		# Calculate speed based on difficulty level
-		# Level 1: speed 10, Level 2: speed 12.5, Level 3: speed 15
+		# Level 1: speed 10, Level 2: speed 15, Level 3: speed 20
 		if current_difficulty_level == 1:
 			speed = 10.0
 		elif current_difficulty_level == 2:
-			speed = 12.5
-		else:  # Level 3
 			speed = 15.0
+		else:  # Level 3
+			speed = 20.0
 
 		# Apply powerup speed modifier (e.g., from gokart)
 		speed *= powerup_manager.get_speed_modifier()
