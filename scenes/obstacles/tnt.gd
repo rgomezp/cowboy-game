@@ -11,7 +11,7 @@ func _ready() -> void:
 	if tree:
 		main_scene = tree.current_scene
 
-func trigger_explosion(from_collision: bool = false) -> void:
+func trigger_explosion(from_collision: bool = false, apply_bounce: bool = true) -> void:
 	# Prevent multiple explosions
 	if is_exploding:
 		return
@@ -22,7 +22,8 @@ func trigger_explosion(from_collision: bool = false) -> void:
 	_disable_collisions()
 	
 	# If triggered from player collision, handle player bounce and stop movement
-	if from_collision and main_scene:
+	# Only apply bounce if explicitly requested (for game over scenarios)
+	if from_collision and apply_bounce and main_scene:
 		_handle_collision_explosion()
 	
 	# Play explosion animation

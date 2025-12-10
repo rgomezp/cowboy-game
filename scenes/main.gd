@@ -446,9 +446,9 @@ func _on_player_hit_obstacle(obstacle: Node):
 		if obstacle_manager.obstacles.has(obstacle):
 			obstacle_manager.obstacles.erase(obstacle)
 
-		# Trigger explosion animation (from_collision=true to handle player bounce)
+		# Trigger explosion animation
 		if obstacle.has_method("trigger_explosion"):
-			# Check if player has lives - if so, use a life after explosion
+			# Check if player has lives - if so, use a life after explosion (no bounce)
 			if lives_manager and lives_manager.has_lives():
 				# Connect to explosion finished signal to use a life
 				if obstacle.has_signal("explosion_finished"):
@@ -456,15 +456,17 @@ func _on_player_hit_obstacle(obstacle: Node):
 					if obstacle.explosion_finished.is_connected(_on_tnt_explosion_finished_with_life):
 						obstacle.explosion_finished.disconnect(_on_tnt_explosion_finished_with_life)
 					obstacle.explosion_finished.connect(_on_tnt_explosion_finished_with_life)
-				obstacle.trigger_explosion(true)
+				# Trigger explosion with from_collision=true but apply_bounce=false (no bounce, just animation)
+				obstacle.trigger_explosion(true, false)
 			else:
-				# No lives - connect to game over handler
+				# No lives - connect to game over handler (apply bounce for game over effect)
 				if obstacle.has_signal("explosion_finished"):
 					# Disconnect first to avoid duplicate connections
 					if obstacle.explosion_finished.is_connected(_on_tnt_explosion_finished_game_over):
 						obstacle.explosion_finished.disconnect(_on_tnt_explosion_finished_game_over)
 					obstacle.explosion_finished.connect(_on_tnt_explosion_finished_game_over)
-				obstacle.trigger_explosion(true)
+				# Trigger explosion with bounce (game over scenario)
+				obstacle.trigger_explosion(true, true)
 		else:
 			# Fallback if script not attached
 			# Check if player has lives
