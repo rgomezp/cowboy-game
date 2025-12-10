@@ -181,6 +181,9 @@ func generate_obstacle(current_distance: int, camera_x: float) -> Array:
 func add_obstacle(obs: Node):
 	add_child(obs)
 	obstacles.append(obs)
+	# Set butterflies to appear in front of coins (higher z_index)
+	if obs.name == "Butterfly" or (obs.has_method("get_script") and obs.get_script() and "butterfly" in obs.get_script().resource_path.to_lower()):
+		obs.z_index = 1  # Higher than coins (default 0)
 	obstacle_added.emit(obs)
 
 func remove_obstacle(obs: Node):
