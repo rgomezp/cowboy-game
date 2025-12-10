@@ -308,6 +308,10 @@ func _destroy_foe(target: Node) -> void:
 	
 	# Award points
 	main_node.score_manager.add_score(200 * 100, true)
+	
+	# Play "mhm" sound 50% of the time when foe is destroyed
+	if main_node.audio_manager and main_node.audio_manager.has_method("play_sound"):
+		main_node.audio_manager.play_sound("mhm", 0.5)
 
 func _destroy_butterfly(target: Node) -> void:
 	# Destroy butterfly - let the destroy() method handle the animation and cleanup
@@ -322,6 +326,10 @@ func _destroy_butterfly(target: Node) -> void:
 	
 	# Award points
 	main_node.score_manager.add_score(100 * 100, true)
+	
+	# Play "mhm" sound 50% of the time when butterfly is destroyed
+	if main_node.audio_manager and main_node.audio_manager.has_method("play_sound"):
+		main_node.audio_manager.play_sound("mhm", 0.5)
 
 func _destroy_tnt(target: Node) -> void:
 	# Remove from obstacle manager's list immediately

@@ -28,6 +28,7 @@ var CollisionHandler = preload("res://scenes/CollisionHandler.gd")
 var SpecialEventManager = preload("res://scenes/SpecialEventManager.gd")
 var PowerUpManager = preload("res://scenes/PowerUpManager.gd")
 var LivesManager = preload("res://scenes/LivesManager.gd")
+var AudioManager = preload("res://scenes/AudioManager.gd")
 # Preload PowerUpBase first to ensure class_name is registered
 # This ensures the class is available when other powerup scripts extend it
 @warning_ignore("unused_private_class_variable")
@@ -48,6 +49,7 @@ var collision_handler: Node
 var special_event_manager: Node
 var powerup_manager: Node
 var lives_manager: Node
+var audio_manager: Node
 
 const PLAYER_START_POS := Vector2i(19, 166)
 const CAMERA_START_POS := Vector2i(540, 960)
@@ -92,6 +94,9 @@ func _ready() -> void:
 
 	# Setup music
 	setup_music()
+
+	# Setup sound effects
+	setup_sound_effects()
 
 	new_game()
 
@@ -201,6 +206,111 @@ func reset_music():
 		$MusicPlayer.stop()
 	$MusicPlayer.play()
 
+func setup_sound_effects():
+	# Load sound effect audio streams
+	# Note: Audio files need to be imported by Godot first (open project in editor)
+	# Try both ResourceLoader.load() and load() in case files need to be imported first
+	var alright_stream = null
+	var mhm_stream = null
+	var makes_sense_stream = null
+	var hwhat_stream = null
+
+	print("[Main] Loading sound effects...")
+
+	# Try loading with ResourceLoader first (handles imported resources)
+	# Using .ogg format as Godot doesn't support .m4a natively
+	var alright_path = "res://assets/audio/connor/alright.ogg"
+	if ResourceLoader.exists(alright_path):
+		alright_stream = ResourceLoader.load(alright_path)
+		print("[Main] alright.ogg exists in ResourceLoader")
+	else:
+		print("[Main] WARNING: alright.ogg not found in ResourceLoader, trying direct load")
+		alright_stream = load(alright_path)
+
+	var mhm_path = "res://assets/audio/connor/mhm.ogg"
+	if ResourceLoader.exists(mhm_path):
+		mhm_stream = ResourceLoader.load(mhm_path)
+		print("[Main] mhm.ogg exists in ResourceLoader")
+	else:
+		print("[Main] WARNING: mhm.ogg not found in ResourceLoader, trying direct load")
+		mhm_stream = load(mhm_path)
+
+	var makes_sense_path = "res://assets/audio/connor/makes_sense.ogg"
+	if ResourceLoader.exists(makes_sense_path):
+		makes_sense_stream = ResourceLoader.load(makes_sense_path)
+		print("[Main] makes_sense.ogg exists in ResourceLoader")
+	else:
+		print("[Main] WARNING: makes_sense.ogg not found in ResourceLoader, trying direct load")
+		makes_sense_stream = load(makes_sense_path)
+
+	var hwhat_path = "res://assets/audio/connor/hwhat.ogg"
+	if ResourceLoader.exists(hwhat_path):
+		hwhat_stream = ResourceLoader.load(hwhat_path)
+		print("[Main] hwhat.ogg exists in ResourceLoader")
+	else:
+		print("[Main] WARNING: hwhat.ogg not found in ResourceLoader, trying direct load")
+		hwhat_stream = load(hwhat_path)
+
+	print("[Main] alright_stream loaded: ", alright_stream != null, " (type: ", typeof(alright_stream), ")")
+	print("[Main] mhm_stream loaded: ", mhm_stream != null, " (type: ", typeof(mhm_stream), ")")
+	print("[Main] makes_sense_stream loaded: ", makes_sense_stream != null, " (type: ", typeof(makes_sense_stream), ")")
+	print("[Main] hwhat_stream loaded: ", hwhat_stream != null, " (type: ", typeof(hwhat_stream), ")")
+
+	# Check if any streams failed to load
+	if not alright_stream or not mhm_stream or not makes_sense_stream or not hwhat_stream:
+		print("[Main] ========================================")
+		print("[Main] WARNING: Some audio files failed to load!")
+		print("[Main] Make sure the .ogg files exist and have been imported by Godot.")
+		print("[Main] SOLUTION: Open the project in Godot editor to trigger audio import.")
+		print("[Main] ========================================")
+
+	if alright_stream and $AlrightSound:
+		$AlrightSound.stream = alright_stream
+		$AlrightSound.volume_db = 0.0  # Set volume to 0dB (full volume)
+		print("[Main] AlrightSound configured, stream type: ", alright_stream.get_class() if alright_stream else "null")
+	else:
+		print("[Main] ERROR: Failed to configure AlrightSound - stream: ", alright_stream, ", node: ", $AlrightSound != null)
+
+	if mhm_stream and $MhmSound:
+		$MhmSound.stream = mhm_stream
+		$MhmSound.volume_db = 0.0
+		print("[Main] MhmSound configured, stream type: ", mhm_stream.get_class() if mhm_stream else "null")
+	else:
+		print("[Main] ERROR: Failed to configure MhmSound - stream: ", mhm_stream, ", node: ", $MhmSound != null)
+
+	if makes_sense_stream and $MakesSenseSound:
+		$MakesSenseSound.stream = makes_sense_stream
+		$MakesSenseSound.volume_db = 0.0
+		print("[Main] MakesSenseSound configured, stream type: ", makes_sense_stream.get_class() if makes_sense_stream else "null")
+	else:
+		print("[Main] ERROR: Failed to configure MakesSenseSound - stream: ", makes_sense_stream, ", node: ", $MakesSenseSound != null)
+
+	if hwhat_stream and $HwhatSound:
+		$HwhatSound.stream = hwhat_stream
+		$HwhatSound.volume_db = 0.0
+		print("[Main] HwhatSound configured, stream type: ", hwhat_stream.get_class() if hwhat_stream else "null")
+	else:
+		print("[Main] ERROR: Failed to configure HwhatSound - stream: ", hwhat_stream, ", node: ", $HwhatSound != null)
+
+	# Lower music volume to make sound effects more audible
+	if $MusicPlayer:
+		$MusicPlayer.volume_db = -10.0  # Lower music by 10dB
+		print("[Main] Music volume lowered to -10dB")
+
+	# Initialize audio manager for Connor's voice lines ONLY
+	# NOTE: This mutex mechanism only applies to Connor's voice lines
+	# Background music (MusicPlayer) and other audio are NOT affected by this mutex
+	audio_manager = AudioManager.new()
+	add_child(audio_manager)
+	var audio_players_dict = {
+		"alright": $AlrightSound,
+		"mhm": $MhmSound,
+		"makes_sense": $MakesSenseSound,
+		"hwhat": $HwhatSound
+	}
+	audio_manager.initialize(audio_players_dict)
+	print("[Main] AudioManager initialized (Connor voice lines only)")
+
 func new_game():
 	# Reset game over and explosion flags
 	game_over_in_progress = false
@@ -219,6 +329,8 @@ func new_game():
 		powerup_manager.reset()
 	if lives_manager:
 		lives_manager.reset()
+	if audio_manager:
+		audio_manager.reset()
 	if $Hud:
 		$Hud.reset()
 
@@ -247,6 +359,10 @@ func new_game():
 
 	# Reset music to play from the beginning
 	reset_music()
+
+	# Play "alright" when game starts/restarts
+	if audio_manager:
+		audio_manager.play_sound("alright")
 
 func update_difficulty_level():
 	# Determine difficulty level based on distance
@@ -290,7 +406,7 @@ func _process(delta: float) -> void:
 		elif current_difficulty_level == 2:
 			speed = 15.0
 		else:  # Level 3
-			speed = 20.0
+			speed = 17.5
 
 		# Apply powerup speed modifier (e.g., from gokart)
 		speed *= powerup_manager.get_speed_modifier()
@@ -502,6 +618,10 @@ func _on_player_bounced_on_butterfly(obstacle: Node):
 	# Award 100 points for bouncing on a butterfly (100 * 100 = 10000 raw score)
 	score_manager.add_score(100 * 100, true)  # Show delta for bonus event
 
+	# Play "mhm" sound 50% of the time when butterfly is destroyed
+	if audio_manager:
+		audio_manager.play_sound("mhm", 0.5)
+
 func _on_player_jumped_on_foe(foe: Node):
 	# Player jumped on the foe from the top - bounce and destroy it
 	# Note: CollisionHandler already disabled main collision, but we ensure it here too as backup
@@ -519,6 +639,10 @@ func _on_player_jumped_on_foe(foe: Node):
 			foe_manager.foes.erase(foe)
 		# Award 200 points for destroying a foe (200 * 100 = 20000 raw score)
 		score_manager.add_score(200 * 100, true)  # Show delta for bonus event
+
+		# Play "mhm" sound 50% of the time when foe is destroyed
+		if audio_manager:
+			audio_manager.play_sound("mhm", 0.5)
 
 func game_over():
 	# Prevent multiple game over calls
@@ -633,6 +757,13 @@ func _on_special_event_started():
 	set_foe_spawning_enabled(false)
 	set_butterfly_spawning_enabled(false)
 
+	# Hide powerup UI if it's active to prevent conflicts
+	if powerup_manager and powerup_manager.has_method("is_powerup_ui_active"):
+		if powerup_manager.is_powerup_ui_active():
+			# Cancel powerup selection/display if active
+			if powerup_manager.has_method("reset"):
+				powerup_manager.reset()
+
 	# Show "Special Event!" message
 	$SpecialEventHud.show_special_event()
 
@@ -675,6 +806,15 @@ func _on_special_button_pressed(is_good: bool):
 		score_manager.add_score(500 * 100, true)  # Show delta for bonus event
 		special_button_result = "correct"
 		special_button_reaction_time = reaction_time  # Store reaction time for correct answers
+
+		# Play appropriate sound based on which button was pressed and was correct
+		if audio_manager:
+			if is_good and is_actually_good:
+				# "Makes Sense" button was pressed and was correct
+				audio_manager.play_sound("makes_sense")
+			elif not is_good and not is_actually_good:
+				# "Hwwat?" button was pressed and was correct
+				audio_manager.play_sound("hwhat")
 	else:
 		# Wrong answer - deduct 500 points (500 * 100 = 50000 raw score)
 		score_manager.add_score(-500 * 100, true)  # Show delta for penalty
@@ -695,6 +835,8 @@ func _on_special_buttons_hidden(was_pressed: bool, too_early: bool):
 		# Button was pressed - show result based on whether it was correct or wrong
 		if special_button_result == "correct":
 			$SpecialEventHud.show_outcome("nice", special_button_reaction_time)
+			# Hide special event buttons before starting powerup selection
+			$SpecialEventButtons.visible = false
 			# Trigger powerup selection on correct answer
 			powerup_manager.start_powerup_selection()
 		elif special_button_result == "wrong":
@@ -711,11 +853,17 @@ func _on_powerup_button_pressed(_powerup_name: String):
 	pass
 
 func _on_powerup_activated(_powerup_name: String):
+	# Play "alright" sound when powerup is activated
+	if audio_manager:
+		audio_manager.play_sound("alright")
+
 	# Powerup was activated - mark that event should end when special leaves screen
 	# Don't end immediately - let special object leave screen naturally
 	# This ensures spawning resumes so the powerup has targets to use
 	if special_event_manager.get_event_active():
 		print("[Main] Powerup activated during special event - will end when special leaves screen")
+		# Hide special event buttons since powerup is now active
+		$SpecialEventButtons.visible = false
 		# Mark button as pressed so event ends when special leaves, but don't end immediately
 		special_event_manager.mark_button_pressed()
 		# Re-enable spawning immediately so powerup has targets
