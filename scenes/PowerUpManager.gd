@@ -264,6 +264,10 @@ func has_unused_powerup() -> bool:
 	# This includes powerups in display phase or blinking phase
 	return is_displaying or is_blinking
 
+func is_powerup_ui_active() -> bool:
+	# Check if powerup UI is in any active phase (selecting, displaying, or blinking)
+	return is_selecting or is_displaying or is_blinking
+
 func _clear_activation_flag():
 	# Clear the activation flag after activation completes
 	# This allows instant powerups (like heart) to complete before allowing another activation
