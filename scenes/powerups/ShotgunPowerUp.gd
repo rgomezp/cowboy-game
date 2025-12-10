@@ -9,6 +9,7 @@ var main_node: Node
 var player: CharacterBody2D
 var gun_proximity_area: Area2D = null
 var destroyed_targets: Array = []
+var gunshot_sound: AudioStreamPlayer = null
 
 func _init():
 	super._init("shotgun", 20.0)  # 10 seconds duration
@@ -54,6 +55,17 @@ func _on_activate(main_node_ref: Node) -> void:
 		if main_node.obstacle_manager and main_node.obstacle_manager.has_method("set_tnt_weight_multiplier"):
 			# Heavily favor TNT spawns during shotgun (much more than 3x weighting)
 			main_node.obstacle_manager.set_tnt_weight_multiplier(10.0)
+	
+	# Load gunshot sound
+	var gunshot_stream = load("res://assets/audio/effects/gunshot.mp3")
+	if gunshot_stream:
+		gunshot_sound = AudioStreamPlayer.new()
+		main_node.add_child(gunshot_sound)
+		gunshot_sound.stream = gunshot_stream
+		gunshot_sound.volume_db = 0.0
+		print("[ShotgunPowerUp] Gunshot sound loaded")
+	else:
+		print("[ShotgunPowerUp] WARNING: Could not load gunshot.mp3")
 
 func _on_deactivate(_main_node_ref: Node) -> void:
 	# Disconnect signal and disable monitoring
@@ -61,6 +73,11 @@ func _on_deactivate(_main_node_ref: Node) -> void:
 		if gun_proximity_area.area_entered.is_connected(_on_target_entered):
 			gun_proximity_area.area_entered.disconnect(_on_target_entered)
 		gun_proximity_area.monitoring = false
+
+	# Clean up gunshot sound
+	if gunshot_sound and is_instance_valid(gunshot_sound):
+		gunshot_sound.queue_free()
+		gunshot_sound = null
 
 	destroyed_targets.clear()
 	print("[ShotgunPowerUp] Deactivated")
@@ -309,6 +326,11 @@ func _destroy_foe(target: Node) -> void:
 	# Award points
 	main_node.score_manager.add_score(200 * 100, true)
 	
+	# Play gunshot sound when foe is destroyed
+	if gunshot_sound and gunshot_sound.stream:
+		gunshot_sound.play()
+		print("[ShotgunPowerUp] Playing gunshot sound (foe destroyed)")
+	
 	# Play "mhm" sound 50% of the time when foe is destroyed
 	if main_node.audio_manager and main_node.audio_manager.has_method("play_sound"):
 		main_node.audio_manager.play_sound("mhm", 0.5)
@@ -326,6 +348,11 @@ func _destroy_butterfly(target: Node) -> void:
 	
 	# Award points
 	main_node.score_manager.add_score(100 * 100, true)
+	
+	# Play gunshot sound when butterfly is destroyed
+	if gunshot_sound and gunshot_sound.stream:
+		gunshot_sound.play()
+		print("[ShotgunPowerUp] Playing gunshot sound (butterfly destroyed)")
 	
 	# Play "mhm" sound 50% of the time when butterfly is destroyed
 	if main_node.audio_manager and main_node.audio_manager.has_method("play_sound"):
