@@ -25,8 +25,8 @@ const DISPLAY_DURATION: float = 12.0  # 12 seconds to use powerup
 var is_blinking: bool = false
 var blink_timer: float = 0.0
 var blink_count: int = 0
-const BLINK_DURATION: float = 0.3  # 1 second per blink
-const BLINK_COUNT: int = 3  # 3 blinks
+const BLINK_DURATION: float = 0.3  # 0.3 seconds per blink
+const BLINK_COUNT: int = 5  # 5 blinks
 
 # Selected powerup name
 var selected_powerup_name: String = ""
@@ -121,7 +121,7 @@ func update(delta: float, main_node: Node):
 				var is_visible = (blink_count % 2 == 1)
 				powerup_ui.set_button_visible(selected_powerup_name, is_visible)
 			
-			# After 3 complete blink cycles (6 toggles = 3 visible + 3 invisible), waste the powerup
+			# After 5 complete blink cycles (10 toggles = 5 visible + 5 invisible), waste the powerup
 			if blink_count >= BLINK_COUNT * 2:
 				waste_powerup()
 
@@ -163,8 +163,11 @@ func waste_powerup():
 
 func on_powerup_button_pressed(powerup_name: String):
 	# Player pressed a powerup button
-	if not is_displaying or powerup_name != selected_powerup_name:
-		return  # Not the right time or wrong powerup
+	# Allow pressing during display phase or blinking phase
+	if powerup_name != selected_powerup_name:
+		return  # Wrong powerup
+	if not is_displaying and not is_blinking:
+		return  # Not the right time
 	
 	# Find and activate the powerup
 	for powerup in available_powerups:

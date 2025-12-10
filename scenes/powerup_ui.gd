@@ -36,3 +36,5 @@ func hide_all_buttons():
 func set_button_visible(powerup_name: String, should_show: bool):
 	if buttons.has(powerup_name):
 		buttons[powerup_name].visible = should_show
+		# Keep button enabled even when invisible during blinking so it remains pressable
+		buttons[powerup_name].disabled = false
