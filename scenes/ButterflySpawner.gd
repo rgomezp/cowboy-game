@@ -34,11 +34,11 @@ func reset_timer():
 	last_butterfly_time = 0.0
 	# Adjust interval based on difficulty
 	if difficulty_level == 1:
-		next_butterfly_interval = randf_range(5.0, 15.0)
+		next_butterfly_interval = randf_range(1.0, 10.0)
 	elif difficulty_level == 2:
-		next_butterfly_interval = randf_range(3.0, 10.0)
+		next_butterfly_interval = randf_range(1.0, 5.0)
 	else:  # Level 3
-		next_butterfly_interval = randf_range(2.0, 7.0)
+		next_butterfly_interval = randf_range(1.0, 3.0)
 	print("[ButterflySpawner] reset_timer: next_butterfly_interval=", next_butterfly_interval)
 
 func is_spawning_enabled() -> bool:
@@ -48,12 +48,12 @@ func update(delta: float, current_distance: int, camera_x: float) -> Node:
 	# Always spawn single butterfly (frequency adjusts based on difficulty)
 	if not spawning_enabled:
 		return null
-	
+
 	last_butterfly_time += delta
 	if last_butterfly_time >= next_butterfly_interval:
 		# Use actual camera position passed from main.gd
 		var base_x: int = int(camera_x) + screen_size.x + 100
-		
+
 		var butterfly = spawn_butterfly_at_position(current_distance, base_x)
 		last_butterfly_time = 0.0
 		# Adjust interval based on difficulty
@@ -63,7 +63,7 @@ func update(delta: float, current_distance: int, camera_x: float) -> Node:
 			next_butterfly_interval = randf_range(3.0, 10.0)
 		else:  # Level 3
 			next_butterfly_interval = randf_range(2.0, 7.0)
-		
+
 		return butterfly
 	return null
 
