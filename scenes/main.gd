@@ -285,7 +285,7 @@ func _process(delta: float) -> void:
 		# Calculate speed based on difficulty level
 		# Level 1: speed 10, Level 2: speed 15, Level 3: speed 20
 		if current_difficulty_level == 1:
-			speed = 10.0
+			speed = 12.5
 		elif current_difficulty_level == 2:
 			speed = 15.0
 		else:  # Level 3
