@@ -59,6 +59,12 @@ var distance : int = 0  # Track actual distance traveled, separate from score
 var game_over_in_progress : bool = false  # Track if game over is already triggered
 var explosion_in_progress : bool = false  # Track if TNT explosion is playing (stops movement)
 
+# Difficulty system
+var current_difficulty_level : int = 1
+const LEVEL_1_THRESHOLD : int = 0      # Start at level 1
+const LEVEL_2_THRESHOLD : int = 20000  # Switch to level 2 at 20k distance
+const LEVEL_3_THRESHOLD : int = 500000 # Switch to level 3 at 50k distance
+
 # Score delta display variables
 var score_delta_timer: float = 0.0
 var score_delta_color_white: bool = true  # Track color alternation
@@ -126,7 +132,7 @@ func setup_managers():
 	foe_spawner.foe_spawned.connect(_on_foe_spawned)
 	var foe_types: Array[PackedScene] = [furry_scene, troll_scene]
 	foe_spawner.initialize(foe_types, screen_size, ground_sprite, obstacle_manager, foe_manager)
-	
+
 	# Set cross-references for coordination
 	obstacle_manager.foe_manager = foe_manager
 
@@ -147,7 +153,7 @@ func setup_managers():
 	powerup_manager.powerup_activated.connect(_on_powerup_activated)
 	powerup_manager.powerup_deactivated.connect(_on_powerup_deactivated)
 	$PowerUpUI.powerup_button_pressed.connect(powerup_manager.on_powerup_button_pressed)
-	
+
 	# Initialize powerup HUD
 	$PowerUpHud.initialize(powerup_manager)
 
@@ -185,7 +191,7 @@ func new_game():
 	# Reset game over and explosion flags
 	game_over_in_progress = false
 	explosion_in_progress = false
-	
+
 	# Reset managers
 	score_manager.reset()
 	obstacle_manager.reset()
@@ -204,6 +210,7 @@ func new_game():
 	game_running = false
 	get_tree().paused = false
 	distance = 0  # Reset distance
+	current_difficulty_level = 1  # Reset to level 1
 
 	# Reset the nodes
 	$Player.position = PLAYER_START_POS
@@ -223,6 +230,30 @@ func new_game():
 	# Reset music to play from the beginning
 	reset_music()
 
+func update_difficulty_level():
+	# Determine difficulty level based on distance
+	if distance >= LEVEL_3_THRESHOLD:
+		current_difficulty_level = 3
+	elif distance >= LEVEL_2_THRESHOLD:
+		current_difficulty_level = 2
+	else:
+		current_difficulty_level = 1
+
+func update_hud_difficulty_level():
+	# Update HUD with current difficulty level for debugging
+	if not $Hud.has_node("DifficultyLevel"):
+		# Create difficulty level label if it doesn't exist
+		var level_label = Label.new()
+		level_label.name = "DifficultyLevel"
+		level_label.text = "Level: " + str(current_difficulty_level)
+		level_label.position = Vector2(54, 10)
+		var font = load("res://assets/fonts/retro.ttf")
+		if font:
+			level_label.add_theme_font_override("font", font)
+		level_label.add_theme_font_size_override("font_size", 40)
+		$Hud.add_child(level_label)
+	else:
+		$Hud.get_node("DifficultyLevel").text = "Level: " + str(current_difficulty_level)
 
 # Game logic happens here
 func _process(delta: float) -> void:
@@ -231,32 +262,51 @@ func _process(delta: float) -> void:
 		if powerup_manager:
 			powerup_manager.update(delta, self)
 
-		# Calculate speed based on distance traveled, not score
-		@warning_ignore("integer_division")
-		speed = START_SPEED + distance / SPEED_MODIFIER
-		if speed > MAX_SPEED:
-			speed = MAX_SPEED
+		# Update difficulty level based on distance
+		update_difficulty_level()
+
+		# Calculate speed based on difficulty level
+		# Level 1: speed 10, Level 2: speed 12.5, Level 3: speed 15
+		if current_difficulty_level == 1:
+			speed = 10.0
+		elif current_difficulty_level == 2:
+			speed = 12.5
+		else:  # Level 3
+			speed = 15.0
 
 		# Apply powerup speed modifier (e.g., from gokart)
 		speed *= powerup_manager.get_speed_modifier()
 
-		# Generate obstacles
-		var new_obstacle = obstacle_manager.generate_obstacle(distance)
-		if new_obstacle:
-			obstacle_manager.add_obstacle(new_obstacle)
+		# Update obstacle manager with current difficulty level
+		obstacle_manager.set_difficulty_level(current_difficulty_level)
 
-		# Check butterfly spawning
-		var butterfly = butterfly_spawner.update(delta, distance)
+		# Generate obstacles (returns array - single at level 1, pair at level 2+)
+		# Use actual camera position for accurate spawning
+		var new_obstacles = obstacle_manager.generate_obstacle(distance, $Camera2D.position.x)
+		for new_obstacle in new_obstacles:
+			if new_obstacle:
+				obstacle_manager.add_obstacle(new_obstacle)
+
+		# Update butterfly spawner with current difficulty level
+		butterfly_spawner.set_difficulty_level(current_difficulty_level)
+
+		# Check butterfly spawning (always single, frequency adjusts with difficulty)
+		# Use actual camera position for accurate spawning
+		var butterfly = butterfly_spawner.update(delta, distance, $Camera2D.position.x)
 		if butterfly:
 			obstacle_manager.add_obstacle(butterfly)
 
-		# Check coin spawning
-		var coin = coin_spawner.update(delta, distance)
+		# Check coin spawning (use actual camera position for accurate spawning)
+		var coin = coin_spawner.update(delta, distance, $Camera2D.position.x)
 		if coin:
 			coin_manager.add_coin(coin)
 
-		# Check foe spawning
-		var foe = foe_spawner.update(distance)
+		# Update foe spawner with current difficulty level
+		foe_spawner.set_difficulty_level(current_difficulty_level)
+
+		# Check foe spawning (always single, frequency adjusts with difficulty)
+		# Use actual camera position for accurate spawning
+		var foe = foe_spawner.update(distance, $Camera2D.position.x)
 		if foe:
 			foe_manager.add_foe(foe)
 
@@ -295,6 +345,9 @@ func _process(delta: float) -> void:
 				# Hide label after 1 second
 				$Hud.get_node("ScoreValueDelta").hide()
 				score_delta_timer = 0.0
+
+		# Update HUD with current difficulty level
+		update_hud_difficulty_level()
 	else:
 		if Input.is_action_pressed("ui_accept"):
 			game_running = true
@@ -369,13 +422,13 @@ func _on_player_hit_obstacle(obstacle: Node):
 	# Prevent multiple game over triggers
 	if game_over_in_progress:
 		return
-	
+
 	# Check if obstacle is TNT - if so, play explosion animation before game over
 	if _is_tnt(obstacle):
 		# Remove from obstacle manager immediately
 		if obstacle_manager.obstacles.has(obstacle):
 			obstacle_manager.obstacles.erase(obstacle)
-		
+
 		# Trigger explosion (from_collision=true to handle player bounce)
 		if obstacle.has_method("trigger_explosion"):
 			# Connect to explosion finished signal before triggering
@@ -429,7 +482,7 @@ func game_over():
 	if game_over_in_progress:
 		return
 	game_over_in_progress = true
-	
+
 	score_manager.check_high_score()
 	get_tree().paused = true
 	game_running = false
