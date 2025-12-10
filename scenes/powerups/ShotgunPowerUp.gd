@@ -366,7 +366,13 @@ func _destroy_tnt(target: Node) -> void:
 	# Award points for destroying TNT
 	main_node.score_manager.add_score(50 * 100, true)
 	
+	# Play gunshot sound when TNT is destroyed (explosion sound will also play from TNT's trigger_explosion)
+	if gunshot_sound and gunshot_sound.stream:
+		gunshot_sound.play()
+		print("[ShotgunPowerUp] Playing gunshot sound (TNT destroyed)")
+	
 	# Use TNT's own explosion method (from_collision=false since this is from shotgun)
+	# This will play the explosion sound
 	if target.has_method("trigger_explosion"):
 		target.trigger_explosion(false)
 	else:
