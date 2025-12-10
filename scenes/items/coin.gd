@@ -1,6 +1,7 @@
 extends Area2D
 
 var is_collected: bool = false
+var coin_sound: AudioStreamPlayer = null
 
 func _ready() -> void:
 	# Ensure monitoring is enabled for collision detection
@@ -8,6 +9,17 @@ func _ready() -> void:
 	monitorable = true
 	# Connect collision signal directly
 	body_entered.connect(_on_body_entered)
+	
+	# Load coin sound
+	var coin_stream = load("res://assets/audio/effects/coin.mp3")
+	if coin_stream:
+		coin_sound = AudioStreamPlayer.new()
+		add_child(coin_sound)
+		coin_sound.stream = coin_stream
+		coin_sound.volume_db = -10.5  # 70% volume reduction (30% of original volume)
+		print("[Coin] Coin sound loaded")
+	else:
+		print("[Coin] WARNING: Could not load coin.mp3")
 
 func _on_body_entered(body: Node):
 	# Don't process if already collected
@@ -45,6 +57,11 @@ func collect():
 	# Add 10 points to score (10 * 100 = 1000 raw score for display)
 	if "score_manager" in main_scene and main_scene.score_manager:
 		main_scene.score_manager.add_score(10 * 100, true)  # Show delta for bonus event
+
+	# Play coin collection sound
+	if coin_sound and coin_sound.stream:
+		coin_sound.play()
+		print("[Coin] Playing coin collection sound")
 
 	# Trigger the collected animation and wait for it to finish
 	var animated_sprite = $AnimatedSprite2D
