@@ -53,8 +53,8 @@ func reset():
 	schedule_next_event()
 
 func schedule_next_event():
-	# Schedule next event in 15-45 seconds (15-45 seconds)
-	next_event_interval = randf_range(15.0, 45.0)
+	# Schedule next event in 10-30 seconds (10-30 seconds)
+	next_event_interval = randf_range(10.0, 30.0)
 	time_since_last_event = 0.0
 
 func update(delta: float, current_speed: float, camera_x: float) -> void:
