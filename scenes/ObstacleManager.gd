@@ -10,6 +10,7 @@ var screen_size: Vector2i
 var ground_sprite: Sprite2D
 var spawning_enabled: bool = true  # Can be disabled for special events
 var foe_manager: Node = null  # Reference to foe manager for coordination
+var difficulty_level: int = 1  # Current difficulty level
 const MIN_SPAWN_DISTANCE: int = 500  # Minimum X distance between obstacles and foes
 
 func initialize(obstacle_scenes: Array[PackedScene], size: Vector2i, ground: Sprite2D, foe_mgr: Node = null):
@@ -27,13 +28,30 @@ func clear_all_obstacles():
 		obs.queue_free()
 	obstacles.clear()
 
+func set_difficulty_level(level: int):
+	difficulty_level = level
+
 func should_generate_obstacle(current_distance: int) -> bool:
 	if obstacles.is_empty():
 		return true
 
 	var distance_since_last = current_distance - last_obstacle_distance
-	var min_spacing = randi_range(4000, 7000)
-	var max_spacing = randi_range(10000, 20000)
+	# Adjust spawn frequency based on difficulty level
+	var min_spacing: int
+	var max_spacing: int
+	if difficulty_level == 1:
+		# Level 1: infrequent spawns
+		min_spacing = randi_range(4000, 7000)
+		max_spacing = randi_range(10000, 20000)
+	elif difficulty_level == 2:
+		# Level 2: more frequent spawns
+		min_spacing = randi_range(3000, 5000)
+		max_spacing = randi_range(7000, 12000)
+	else:  # Level 3
+		# Level 3: even more frequent spawns
+		min_spacing = randi_range(2000, 4000)
+		max_spacing = randi_range(5000, 9000)
+
 	var required_spacing = randi_range(min_spacing, max_spacing)
 	return distance_since_last >= required_spacing
 
@@ -51,8 +69,8 @@ func sync_distance(current_distance: int):
 		# Subtract minimum spacing so objects can spawn immediately
 		# Use a value slightly less than min_spacing to ensure spawning happens soon
 		last_obstacle_distance = current_distance - 3000
-		print("[ObstacleManager] sync_distance: current_distance=", current_distance, 
-			  ", old_last_obstacle_distance=", old_last_distance, 
+		print("[ObstacleManager] sync_distance: current_distance=", current_distance,
+			  ", old_last_obstacle_distance=", old_last_distance,
 			  ", new_last_obstacle_distance=", last_obstacle_distance,
 			  ", distance_since_last=", current_distance - last_obstacle_distance)
 
@@ -63,7 +81,7 @@ func is_position_too_close_to_foes(x_position: int) -> bool:
 	# Check if position is too close to any existing foe
 	if not foe_manager:
 		return false
-	
+
 	for foe in foe_manager.foes:
 		if not is_instance_valid(foe):
 			continue
@@ -82,79 +100,83 @@ func is_position_too_close_to_obstacles(x_position: int) -> bool:
 			return true
 	return false
 
-func generate_obstacle(current_distance: int) -> Node:
+func generate_obstacle(current_distance: int, camera_x: float) -> Array:
+	# Returns an array of obstacles (single obstacle at level 1, pair at level 2+)
 	if not spawning_enabled:
-		return null
+		return []
 	if not should_generate_obstacle(current_distance):
-		return null
+		return []
 
-	var obs_type = obstacle_types[randi() % obstacle_types.size()]
-	var obs = obs_type.instantiate()
+	var obstacles_to_spawn: Array = []
 
-	# Handle both Sprite2D and AnimatedSprite2D
-	var obs_sprite = null
-	var obs_height = 0.0
-	var obs_scale = Vector2(1, 1)
-	var obs_sprite_offset = Vector2(0, 0)
-	
-	# Try to get Sprite2D first
-	if obs.has_node("Sprite2D"):
-		obs_sprite = obs.get_node("Sprite2D")
-		if obs_sprite and obs_sprite.texture:
-			obs_height = obs_sprite.texture.get_height()
-			obs_scale = obs_sprite.scale
-			obs_sprite_offset = obs_sprite.position
-	# If not found, try AnimatedSprite2D
-	elif obs.has_node("AnimatedSprite2D"):
-		obs_sprite = obs.get_node("AnimatedSprite2D")
-		if obs_sprite and obs_sprite.sprite_frames:
-			# Get the first frame's texture to determine height
-			var first_frame = obs_sprite.sprite_frames.get_frame_texture("default", 0)
-			if first_frame:
-				obs_height = first_frame.get_height()
-			obs_scale = obs_sprite.scale
-			obs_sprite_offset = obs_sprite.position
-	
-	# Fallback if we couldn't get sprite info
-	if obs_height == 0.0:
-		obs_height = 50.0  # Default fallback height
+	# At level 2+, spawn single or pairs of obstacles
+	var one_or_two = randi_range(1, 2)
+	var spawn_count = one_or_two if difficulty_level >= 2 else 1
 
-	var ground_top_y = ground_sprite.offset.y
+	# Use actual camera position passed from main.gd
+	var base_x = int(camera_x) + screen_size.x + 100
 
-	# Camera starts at 540, so calculate camera position from distance
-	# This ensures obstacles spawn off-camera ahead, not mid-screen
-	const CAMERA_START_X: int = 540
-	var camera_x = CAMERA_START_X + current_distance
-	# Add some randomness to the x position
-	var base_x = camera_x + screen_size.x + 100
-	var random_offset = randi_range(-50, 50)
-	var obs_x: int = base_x + random_offset
-	
-	# Check if position is too close to existing obstacles or foes
-	# Try multiple positions to find a valid spawn location
-	var attempts = 0
-	var max_attempts = 10
-	while (is_position_too_close_to_obstacles(obs_x) or is_position_too_close_to_foes(obs_x)) and attempts < max_attempts:
-		random_offset = randi_range(-200, 200)  # Wider range for retry
-		obs_x = base_x + random_offset
-		attempts += 1
-	
-	# If still too close after attempts, skip spawning this obstacle
-	if is_position_too_close_to_obstacles(obs_x) or is_position_too_close_to_foes(obs_x):
-		print("[ObstacleManager] generate_obstacle: Position too close, skipping spawn at x=", obs_x)
-		return null
+	# Spawn obstacles with spacing between them (for pairs)
+	var spacing_between = 200  # Space between obstacles in a pair
 
-	# Position obstacle so its bottom edge sits on top of the ground
-	var obs_y: int = ground_top_y - obs_sprite_offset.y - (obs_height * obs_scale.y / 2) + 10
+	for i in range(spawn_count):
+		var obs_type = obstacle_types[randi() % obstacle_types.size()]
+		var obs = obs_type.instantiate()
 
-	# Set position on obstacle
-	obs.position = Vector2i(obs_x, obs_y)
+		# Position the obstacle
+		var obs_x = base_x + (i * spacing_between) + randi_range(-50, 50)
 
-	var old_last_distance = last_obstacle_distance
-	last_obstacle_distance = current_distance
-	print("[ObstacleManager] generate_obstacle: SPAWNED at distance=", current_distance,
-		  ", position=(", obs_x, ", ", obs_y, "), last_obstacle_distance: ", old_last_distance, " -> ", last_obstacle_distance)
-	return obs
+		# Check if position is too close to existing obstacles or foes
+		var attempts = 0
+		var max_attempts = 10
+		while (is_position_too_close_to_obstacles(obs_x) or is_position_too_close_to_foes(obs_x)) and attempts < max_attempts:
+			obs_x = base_x + (i * spacing_between) + randi_range(-200, 200)
+			attempts += 1
+
+		# If still too close after attempts, skip this obstacle
+		if is_position_too_close_to_obstacles(obs_x) or is_position_too_close_to_foes(obs_x):
+			print("[ObstacleManager] generate_obstacle: Position too close, skipping spawn at x=", obs_x)
+			obs.queue_free()
+			continue
+
+		# Get sprite info for positioning
+		var obs_sprite = null
+		var obs_height = 0.0
+		var obs_scale = Vector2(1, 1)
+		var obs_sprite_offset = Vector2(0, 0)
+
+		# Try to get Sprite2D first
+		if obs.has_node("Sprite2D"):
+			obs_sprite = obs.get_node("Sprite2D")
+			if obs_sprite and obs_sprite.texture:
+				obs_height = obs_sprite.texture.get_height()
+				obs_scale = obs_sprite.scale
+				obs_sprite_offset = obs_sprite.position
+		# If not found, try AnimatedSprite2D
+		elif obs.has_node("AnimatedSprite2D"):
+			obs_sprite = obs.get_node("AnimatedSprite2D")
+			if obs_sprite and obs_sprite.sprite_frames:
+				var first_frame = obs_sprite.sprite_frames.get_frame_texture("default", 0)
+				if first_frame:
+					obs_height = first_frame.get_height()
+				obs_scale = obs_sprite.scale
+				obs_sprite_offset = obs_sprite.position
+
+		# Fallback if we couldn't get sprite info
+		if obs_height == 0.0:
+			obs_height = 50.0
+
+		var ground_top_y = ground_sprite.offset.y
+		var obs_y: int = int(ground_top_y - obs_sprite_offset.y - (obs_height * obs_scale.y / 2) + 10)
+
+		obs.position = Vector2i(int(obs_x), obs_y)
+		obstacles_to_spawn.append(obs)
+
+	if obstacles_to_spawn.size() > 0:
+		last_obstacle_distance = current_distance
+		print("[ObstacleManager] generate_obstacle: SPAWNED ", obstacles_to_spawn.size(), " obstacle(s) at distance=", current_distance)
+
+	return obstacles_to_spawn
 
 func add_obstacle(obs: Node):
 	add_child(obs)
