@@ -13,6 +13,7 @@ const SPRITE_QUALITY: Dictionary = {
 	"res://scenes/specials/devil_plush.tscn": false, # false = "hwwat?" (bad)
 	"res://scenes/specials/man_baby.tscn": false,   # false = "hwwat?" (bad)
 	"res://scenes/specials/go_vegan.tscn": false,   # false = "hwwat?" (bad)
+	"res://scenes/specials/pirate.tscn": false,     # false = "hwwat?" (bad)
 }
 
 static func is_good_sprite(scene_path: String) -> bool:
