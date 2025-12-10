@@ -138,8 +138,9 @@ func _physics_process(delta: float) -> void:
 			has_double_jumped = true
 			is_tracking_peak = false
 
-		# Play gliding animation if double jumped, otherwise play jumping
-		if has_double_jumped:
+		# Play gliding animation only if double jumped AND holding jump input
+		# If input is released while gliding, switch to jumping animation
+		if has_double_jumped and is_holding_jump and not gokart_active:
 			$AnimatedSprite2D.play(_get_animation_name("gliding"))
 		else:
 			$AnimatedSprite2D.play(_get_animation_name("jumping"))
