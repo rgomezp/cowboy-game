@@ -27,6 +27,7 @@ var buttons_ui: CanvasLayer = null  # Reference to buttons UI
 var buttons_shown: bool = false  # Track if buttons have been shown for this event
 var button_pressed: bool = false  # Track if a button was pressed (don't end event until special leaves screen)
 var pending_cleanup: bool = false  # Track if we're waiting for special to leave screen before cleanup
+var shown_specials: Array[String] = []  # Track which specials have been shown in this cycle
 
 func initialize(special_scenes_param: Array[PackedScene], screen_size_param: Vector2i, ground_sprite_param: Sprite2D, special_ground_param: Node, buttons_ui_param: CanvasLayer, powerup_manager_param: Node = null):
 	special_scenes = special_scenes_param
@@ -35,6 +36,7 @@ func initialize(special_scenes_param: Array[PackedScene], screen_size_param: Vec
 	special_ground = special_ground_param
 	buttons_ui = buttons_ui_param
 	powerup_manager = powerup_manager_param
+	shown_specials.clear()  # Initialize shown specials tracking
 	schedule_next_event()
 
 func reset():
@@ -44,6 +46,7 @@ func reset():
 	prepare_timer = 0.0
 	button_delay_timer = 0.0
 	pending_cleanup = false
+	shown_specials.clear()  # Reset shown specials tracking
 	if current_special and is_instance_valid(current_special):
 		current_special.queue_free()
 		current_special = null
@@ -51,24 +54,24 @@ func reset():
 
 func schedule_next_event():
 	# Schedule next event in 15-45 seconds (15-45 seconds)
-	next_event_interval = randf_range(5.0, 10.0)
+	next_event_interval = randf_range(15.0, 45.0)
 	time_since_last_event = 0.0
 
 func update(delta: float, current_speed: float, camera_x: float) -> void:
 	if is_event_active:
 		handle_active_event(delta, current_speed, camera_x)
 	else:
-		# Check if there's an unused powerup - if so, don't increment timer
-		var has_unused = false
-		if powerup_manager and powerup_manager.has_method("has_unused_powerup"):
-			has_unused = powerup_manager.has_unused_powerup()
+		# Check if powerup UI is active - if so, don't increment timer or start events
+		var powerup_ui_active = false
+		if powerup_manager and powerup_manager.has_method("is_powerup_ui_active"):
+			powerup_ui_active = powerup_manager.is_powerup_ui_active()
 
-		# Only increment timer if there's no unused powerup
-		if not has_unused:
+		# Only increment timer if powerup UI is not active
+		if not powerup_ui_active:
 			time_since_last_event += delta
 
-		# Check if it's time for a new event (only if no unused powerup)
-		if time_since_last_event >= next_event_interval and not has_unused:
+		# Check if it's time for a new event (only if powerup UI is not active)
+		if time_since_last_event >= next_event_interval and not powerup_ui_active:
 			start_special_event()
 
 func start_special_event():
@@ -108,14 +111,38 @@ func spawn_special(current_speed: float, camera_x: float):
 		end_special_event()
 		return
 
-	# Pick a random special
-	var special_index = randi() % special_scenes.size()
-	var special_scene = special_scenes[special_index]
+	# Get available specials (not yet shown in this cycle)
+	var available_specials: Array[PackedScene] = []
+	var available_indices: Array[int] = []
+	
+	for i in range(special_scenes.size()):
+		var scene_path = special_scenes[i].resource_path
+		if scene_path != null and scene_path not in shown_specials:
+			available_specials.append(special_scenes[i])
+			available_indices.append(i)
+	
+	# If all specials have been shown, reset and use all specials
+	if available_specials.is_empty():
+		shown_specials.clear()
+		available_specials = special_scenes.duplicate()
+		available_indices.clear()
+		for i in range(special_scenes.size()):
+			available_indices.append(i)
+	
+	# Pick a random special from available ones
+	var random_index = randi() % available_specials.size()
+	var special_scene = available_specials[random_index]
+	var selected_index = available_indices[random_index]
+	
 	current_special = special_scene.instantiate()
 
 	# Store the scene path for determining if it's good/bad
 	# We need to get the path from the PackedScene
-	current_special_scene_path = special_scene.resource_path
+	current_special_scene_path = special_scenes[selected_index].resource_path
+	
+	# Mark this special as shown (only if path is valid)
+	if current_special_scene_path != null and current_special_scene_path not in shown_specials:
+		shown_specials.append(current_special_scene_path)
 
 	# Connect to the special's signals
 	if current_special.has_signal("entered_camera_view"):
