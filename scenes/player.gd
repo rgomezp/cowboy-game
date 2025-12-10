@@ -5,7 +5,7 @@ const GRAVITY : int = 4200
 const GLIDE_GRAVITY : int = 1200
 const JUMP_VELOCITY = -1800
 const DOUBLE_JUMP_VELOCITY = -1000
-const DOUBLE_JUMP_PEAK_TOLERANCE = 150  # Distance from peak where double jump is still allowed
+const DOUBLE_JUMP_PEAK_TOLERANCE = 300  # Distance from peak where double jump is still allowed (increased for later timing)
 
 var is_sliding: bool = false
 var sliding_timer: float = 0.0
@@ -61,8 +61,10 @@ func _physics_process(delta: float) -> void:
 	# Update collision shapes based on gokart power-up state
 	var gokart_active = _is_gokart_active()
 	
-	# Use glide gravity if double jump has been used and gokart is not active, otherwise use normal gravity
-	var current_gravity = GLIDE_GRAVITY if (has_double_jumped and not gokart_active) else GRAVITY
+	# Use glide gravity only if double jump has been used, input is held, and gokart is not active
+	# If input is released while gliding, return to normal gravity for better maneuverability
+	var is_holding_jump = Input.is_action_pressed("ui_accept")
+	var current_gravity = GLIDE_GRAVITY if (has_double_jumped and is_holding_jump and not gokart_active) else GRAVITY
 	velocity.y += current_gravity * delta
 
 	# Update collision shapes - do this before move_and_slide to ensure proper collision detection
