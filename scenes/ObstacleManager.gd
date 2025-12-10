@@ -12,6 +12,7 @@ var spawning_enabled: bool = true  # Can be disabled for special events
 var foe_manager: Node = null  # Reference to foe manager for coordination
 var difficulty_level: int = 1  # Current difficulty level
 const MIN_SPAWN_DISTANCE: int = 500  # Minimum X distance between obstacles and foes
+var tnt_weight_multiplier: float = 1.0  # Multiplier for TNT spawn weighting
 
 func initialize(obstacle_scenes: Array[PackedScene], size: Vector2i, ground: Sprite2D, foe_mgr: Node = null):
 	obstacle_types = obstacle_scenes
@@ -30,6 +31,38 @@ func clear_all_obstacles():
 
 func set_difficulty_level(level: int):
 	difficulty_level = level
+
+func set_tnt_weight_multiplier(multiplier: float) -> void:
+	# Increase/decrease TNT likelihood by adjusting its weight in selection
+	tnt_weight_multiplier = max(multiplier, 0.0)
+
+func _get_weighted_obstacle_scene() -> PackedScene:
+	if obstacle_types.is_empty():
+		return null
+
+	# Build weights giving TNT an adjusted multiplier
+	var weights: Array[float] = []
+	for scene in obstacle_types:
+		var weight: float = 1.0
+		if scene and scene.resource_path and "tnt" in scene.resource_path.to_lower():
+			weight *= tnt_weight_multiplier
+		weights.append(weight)
+
+	var total_weight = 0.0
+	for w in weights:
+		total_weight += w
+	if total_weight <= 0.0:
+		return obstacle_types[randi() % obstacle_types.size()]
+
+	var pick = randf() * total_weight
+	var cumulative = 0.0
+	for i in range(weights.size()):
+		cumulative += weights[i]
+		if pick <= cumulative:
+			return obstacle_types[i]
+
+	# Fallback
+	return obstacle_types[0]
 
 func should_generate_obstacle(current_distance: int) -> bool:
 	if obstacles.is_empty():
@@ -127,7 +160,7 @@ func generate_obstacle(current_distance: int, camera_x: float) -> Array:
 	var spacing_between = 200  # Space between obstacles in a pair
 
 	for i in range(spawn_count):
-		var obs_type = obstacle_types[randi() % obstacle_types.size()]
+		var obs_type = _get_weighted_obstacle_scene()
 		var obs = obs_type.instantiate()
 
 		# Position the obstacle

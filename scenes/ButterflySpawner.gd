@@ -9,6 +9,7 @@ var next_butterfly_interval: float = 0.0
 var screen_size: Vector2i
 var spawning_enabled: bool = true  # Can be disabled for special events
 var difficulty_level: int = 1  # Current difficulty level
+var spawn_rate_multiplier: float = 1.0  # >1 means more frequent spawns
 
 func initialize(scene: PackedScene, size: Vector2i):
 	self.butterfly_scene = scene
@@ -22,6 +23,10 @@ func reset():
 	# Default to level 1 interval on reset (difficulty will be set before first spawn)
 	next_butterfly_interval = randf_range(5.0, 15.0)
 
+func set_spawn_rate_multiplier(multiplier: float):
+	spawn_rate_multiplier = max(multiplier, 0.01)
+	reset_timer()
+
 func set_spawning_enabled(enabled: bool):
 	var was_enabled = spawning_enabled
 	spawning_enabled = enabled
@@ -34,11 +39,11 @@ func reset_timer():
 	last_butterfly_time = 0.0
 	# Adjust interval based on difficulty
 	if difficulty_level == 1:
-		next_butterfly_interval = randf_range(1.0, 10.0)
+		next_butterfly_interval = randf_range(1.0, 10.0) / spawn_rate_multiplier
 	elif difficulty_level == 2:
-		next_butterfly_interval = randf_range(1.0, 5.0)
+		next_butterfly_interval = randf_range(1.0, 5.0) / spawn_rate_multiplier
 	else:  # Level 3
-		next_butterfly_interval = randf_range(1.0, 3.0)
+		next_butterfly_interval = randf_range(1.0, 3.0) / spawn_rate_multiplier
 	print("[ButterflySpawner] reset_timer: next_butterfly_interval=", next_butterfly_interval)
 
 func is_spawning_enabled() -> bool:
@@ -58,11 +63,11 @@ func update(delta: float, current_distance: int, camera_x: float) -> Node:
 		last_butterfly_time = 0.0
 		# Adjust interval based on difficulty
 		if difficulty_level == 1:
-			next_butterfly_interval = randf_range(5.0, 15.0)
+			next_butterfly_interval = randf_range(5.0, 15.0) / spawn_rate_multiplier
 		elif difficulty_level == 2:
-			next_butterfly_interval = randf_range(3.0, 10.0)
+			next_butterfly_interval = randf_range(3.0, 10.0) / spawn_rate_multiplier
 		else:  # Level 3
-			next_butterfly_interval = randf_range(2.0, 7.0)
+			next_butterfly_interval = randf_range(2.0, 7.0) / spawn_rate_multiplier
 
 		return butterfly
 	return null

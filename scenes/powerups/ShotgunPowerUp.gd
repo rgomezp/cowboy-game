@@ -46,6 +46,15 @@ func _on_activate(main_node_ref: Node) -> void:
 
 	print("[ShotgunPowerUp] Activated - GunProximityArea enabled")
 
+	# Increase spawn rates for butterflies and TNT while shotgun is active
+	if main_node and "butterfly_spawner" in main_node:
+		if main_node.butterfly_spawner and main_node.butterfly_spawner.has_method("set_spawn_rate_multiplier"):
+			main_node.butterfly_spawner.set_spawn_rate_multiplier(2.0)  # double butterflies
+	if main_node and "obstacle_manager" in main_node:
+		if main_node.obstacle_manager and main_node.obstacle_manager.has_method("set_tnt_weight_multiplier"):
+			# Heavily favor TNT spawns during shotgun (much more than 3x weighting)
+			main_node.obstacle_manager.set_tnt_weight_multiplier(10.0)
+
 func _on_deactivate(_main_node_ref: Node) -> void:
 	# Disconnect signal and disable monitoring
 	if gun_proximity_area and is_instance_valid(gun_proximity_area):
@@ -55,6 +64,14 @@ func _on_deactivate(_main_node_ref: Node) -> void:
 
 	destroyed_targets.clear()
 	print("[ShotgunPowerUp] Deactivated")
+
+	# Restore spawn rates
+	if main_node and "butterfly_spawner" in main_node:
+		if main_node.butterfly_spawner and main_node.butterfly_spawner.has_method("set_spawn_rate_multiplier"):
+			main_node.butterfly_spawner.set_spawn_rate_multiplier(1.0)
+	if main_node and "obstacle_manager" in main_node:
+		if main_node.obstacle_manager and main_node.obstacle_manager.has_method("set_tnt_weight_multiplier"):
+			main_node.obstacle_manager.set_tnt_weight_multiplier(1.0)
 
 # ============================================================================
 # UPDATE / POLLING
