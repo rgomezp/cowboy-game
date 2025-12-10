@@ -1,13 +1,14 @@
 [gd_scene load_steps=4 format=3 uid="uid://dyu21k2bbgc75"]
 
 [ext_resource type="Script" uid="uid://dvyb04hpth1wf" path="res://scenes/special_event_buttons.gd" id="2_script"]
-[ext_resource type="CompressedTexture2D" uid="uid://dbrc8sbambqw3" path="res://assets/img/buttons/makes_sense.png" id="3_makes_sense"]
-[ext_resource type="CompressedTexture2D" uid="uid://dxja43hml177u" path="res://assets/img/buttons/hwhat.png" id="4_hwhat"]
+[ext_resource type="Texture2D" uid="uid://dbrc8sbambqw3" path="res://assets/img/buttons/makes_sense.png" id="3_makes_sense"]
+[ext_resource type="Texture2D" uid="uid://dxja43hml177u" path="res://assets/img/buttons/hwhat.png" id="4_hwhat"]
 
 [node name="SpecialEventButtons" type="CanvasLayer"]
 script = ExtResource("2_script")
 
 [node name="MakesSenseButton" type="TextureButton" parent="."]
+texture_filter = 1
 offset_left = 724.0
 offset_top = 1350.0
 offset_right = 924.0
@@ -16,6 +17,7 @@ texture_normal = ExtResource("3_makes_sense")
 stretch_mode = 5
 
 [node name="HwwatButton" type="TextureButton" parent="."]
+texture_filter = 1
 offset_left = 724.0
 offset_top = 1597.0
 offset_right = 924.0
