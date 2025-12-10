@@ -27,7 +27,7 @@ var buttons_ui: CanvasLayer = null  # Reference to buttons UI
 var buttons_shown: bool = false  # Track if buttons have been shown for this event
 var button_pressed: bool = false  # Track if a button was pressed (don't end event until special leaves screen)
 var pending_cleanup: bool = false  # Track if we're waiting for special to leave screen before cleanup
-var shown_specials: Array[String] = []  # Track which specials have been shown in this cycle
+var shown_specials: Array[int] = []  # Track which special indices have been shown in this cycle
 
 func initialize(special_scenes_param: Array[PackedScene], screen_size_param: Vector2i, ground_sprite_param: Sprite2D, special_ground_param: Node, buttons_ui_param: CanvasLayer, powerup_manager_param: Node = null):
 	special_scenes = special_scenes_param
@@ -114,13 +114,12 @@ func spawn_special(current_speed: float, camera_x: float):
 	# Get available specials (not yet shown in this cycle)
 	var available_specials: Array[PackedScene] = []
 	var available_indices: Array[int] = []
-	
+
 	for i in range(special_scenes.size()):
-		var scene_path = special_scenes[i].resource_path
-		if scene_path != null and scene_path not in shown_specials:
+		if i not in shown_specials:
 			available_specials.append(special_scenes[i])
 			available_indices.append(i)
-	
+
 	# If all specials have been shown, reset and use all specials
 	if available_specials.is_empty():
 		shown_specials.clear()
@@ -128,21 +127,21 @@ func spawn_special(current_speed: float, camera_x: float):
 		available_indices.clear()
 		for i in range(special_scenes.size()):
 			available_indices.append(i)
-	
+
 	# Pick a random special from available ones
 	var random_index = randi() % available_specials.size()
 	var special_scene = available_specials[random_index]
 	var selected_index = available_indices[random_index]
-	
+
 	current_special = special_scene.instantiate()
 
 	# Store the scene path for determining if it's good/bad
 	# We need to get the path from the PackedScene
 	current_special_scene_path = special_scenes[selected_index].resource_path
-	
-	# Mark this special as shown (only if path is valid)
-	if current_special_scene_path != null and current_special_scene_path not in shown_specials:
-		shown_specials.append(current_special_scene_path)
+
+	# Mark this special as shown by its index
+	if selected_index not in shown_specials:
+		shown_specials.append(selected_index)
 
 	# Connect to the special's signals
 	if current_special.has_signal("entered_camera_view"):
