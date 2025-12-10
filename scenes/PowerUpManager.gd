@@ -9,6 +9,7 @@ var current_powerup: PowerUpBase = null
 var powerup_ui: CanvasLayer = null
 var lives_manager: Node = null
 var is_activating: bool = false  # Track if we're currently activating a powerup
+var last_awarded_powerup_name: String = ""  # Track last awarded powerup to avoid repeats
 
 # Selection phase
 var is_selecting: bool = false
@@ -55,6 +56,7 @@ func reset():
 	selected_powerup_name = ""
 	current_selection_index = 0
 	last_cycle_time = 0.0
+	last_awarded_powerup_name = ""
 
 	# Hide UI
 	if powerup_ui:
@@ -151,6 +153,15 @@ func select_random_powerup():
 	if filtered_powerups.size() == 0:
 		return
 
+	# Avoid awarding the same powerup twice in a row (but still allow it to display if it's the only choice)
+	if filtered_powerups.size() > 1:
+		var candidates: Array = []
+		for p in filtered_powerups:
+			if p.name != last_awarded_powerup_name:
+				candidates.append(p)
+		if candidates.size() > 0:
+			filtered_powerups = candidates
+
 	var random_index = randi() % filtered_powerups.size()
 	selected_powerup_name = filtered_powerups[random_index].name
 
@@ -230,6 +241,7 @@ func activate_powerup(powerup: PowerUpBase):
 	selected_powerup_name = ""
 
 	powerup_activated.emit(powerup.name)
+	last_awarded_powerup_name = powerup.name
 	
 	# Clear activation flag after a short delay to allow instant powerups to complete
 	# Use call_deferred to ensure this happens after the activation completes
