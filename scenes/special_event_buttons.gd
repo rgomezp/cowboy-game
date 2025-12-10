@@ -80,10 +80,10 @@ func has_sprite_entered_view() -> bool:
 
 func get_timer_value() -> float:
 	# Public getter to get the current timer value (time since sprite entered view)
-	# Only return timer if sprite has entered view, otherwise return -1.0 to indicate invalid
+	# If sprite hasn't entered view yet, return 0.0 (early press)
 	if not sprite_entered_view:
-		print("[SpecialEventButtons] get_timer_value: Sprite hasn't entered view yet, returning -1.0")
-		return -1.0
+		print("[SpecialEventButtons] get_timer_value: Sprite hasn't entered view yet, returning 0.0")
+		return 0.0
 	print("[SpecialEventButtons] get_timer_value: Returning timer=", timer, " (sprite_entered_view=", sprite_entered_view, ")")
 	return timer
 
@@ -128,23 +128,11 @@ func force_hide_immediately():
 	$HwwatButton.disabled = true
 
 func _on_makes_sense_button_pressed():
-	# If sprite hasn't entered view yet, hide immediately
-	if not sprite_entered_view:
-		force_hide_immediately()
-		button_pressed.emit(true)
-		return
-
 	button_pressed.emit(true)
 	# Force hide when button is pressed
 	force_hide = true
 
 func _on_hwwat_button_pressed():
-	# If sprite hasn't entered view yet, hide immediately
-	if not sprite_entered_view:
-		force_hide_immediately()
-		button_pressed.emit(false)
-		return
-
 	button_pressed.emit(false)
 	# Force hide when button is pressed
 	force_hide = true
