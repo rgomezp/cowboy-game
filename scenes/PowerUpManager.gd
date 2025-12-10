@@ -40,7 +40,7 @@ func reset():
 	if current_powerup and current_powerup.is_active:
 		current_powerup.deactivate(get_parent())
 		current_powerup = null
-	
+
 	# Reset all states
 	is_selecting = false
 	is_displaying = false
@@ -52,7 +52,7 @@ func reset():
 	selected_powerup_name = ""
 	current_selection_index = 0
 	last_cycle_time = 0.0
-	
+
 	# Hide UI
 	if powerup_ui:
 		powerup_ui.hide_all_buttons()
@@ -69,7 +69,7 @@ func start_powerup_selection():
 	current_selection_index = 0
 	last_cycle_time = 0.0
 	selected_powerup_name = ""
-	
+
 	# Show first powerup button
 	if powerup_ui and available_powerups.size() > 0:
 		powerup_ui.show_button(available_powerups[0].name)
@@ -82,45 +82,45 @@ func update(delta: float, main_node: Node):
 		if not current_powerup.is_active:
 			current_powerup = null
 			powerup_deactivated.emit(selected_powerup_name)
-	
+
 	# Handle selection phase
 	if is_selecting:
 		selection_timer += delta
 		last_cycle_time += delta
-		
+
 		# Cycle through powerups
 		if last_cycle_time >= selection_cycle_interval and available_powerups.size() > 0:
 			current_selection_index = (current_selection_index + 1) % available_powerups.size()
 			if powerup_ui:
 				powerup_ui.show_button(available_powerups[current_selection_index].name)
 			last_cycle_time = 0.0
-		
+
 		# After 2 seconds, select random powerup
 		if selection_timer >= SELECTION_DURATION:
 			select_random_powerup()
-	
+
 	# Handle display phase
 	if is_displaying:
 		display_timer += delta
-		
+
 		# After 12 seconds, start blinking
 		if display_timer >= DISPLAY_DURATION:
 			start_blinking()
-	
+
 	# Handle blink phase
 	if is_blinking:
 		blink_timer += delta
-		
+
 		# Toggle visibility every BLINK_DURATION (1 second per blink cycle)
 		if blink_timer >= BLINK_DURATION:
 			blink_count += 1
 			blink_timer = 0.0
-			
+
 			if powerup_ui:
 				# Toggle button visibility (alternate between visible and invisible)
 				var is_visible = (blink_count % 2 == 1)
 				powerup_ui.set_button_visible(selected_powerup_name, is_visible)
-			
+
 			# After 5 complete blink cycles (10 toggles = 5 visible + 5 invisible), waste the powerup
 			if blink_count >= BLINK_COUNT * 2:
 				waste_powerup()
@@ -129,15 +129,15 @@ func select_random_powerup():
 	# Select a random powerup from available ones
 	if available_powerups.size() == 0:
 		return
-	
+
 	var random_index = randi() % available_powerups.size()
 	selected_powerup_name = available_powerups[random_index].name
-	
+
 	# Switch to display phase
 	is_selecting = false
 	is_displaying = true
 	display_timer = 0.0
-	
+
 	# Show selected powerup button
 	if powerup_ui:
 		powerup_ui.show_button(selected_powerup_name)
@@ -147,7 +147,7 @@ func start_blinking():
 	is_blinking = true
 	blink_timer = 0.0
 	blink_count = 0
-	
+
 	# Ensure button is visible to start blinking
 	if powerup_ui:
 		powerup_ui.set_button_visible(selected_powerup_name, true)
@@ -156,7 +156,7 @@ func waste_powerup():
 	# Powerup was not used in time
 	is_blinking = false
 	selected_powerup_name = ""
-	
+
 	# Hide UI
 	if powerup_ui:
 		powerup_ui.hide_all_buttons()
@@ -168,7 +168,7 @@ func on_powerup_button_pressed(powerup_name: String):
 		return  # Wrong powerup
 	if not is_displaying and not is_blinking:
 		return  # Not the right time
-	
+
 	# Find and activate the powerup
 	for powerup in available_powerups:
 		if powerup.name == powerup_name:
@@ -179,17 +179,17 @@ func activate_powerup(powerup: PowerUpBase):
 	# Activate the powerup
 	current_powerup = powerup
 	powerup.activate(get_parent())
-	
+
 	# Hide UI
 	if powerup_ui:
 		powerup_ui.hide_all_buttons()
-	
+
 	# Reset states
 	is_selecting = false
 	is_displaying = false
 	is_blinking = false
 	selected_powerup_name = ""
-	
+
 	powerup_activated.emit(powerup.name)
 
 func is_powerup_active() -> bool:
