@@ -18,7 +18,7 @@ func _ready() -> void:
 		explosion_sound = AudioStreamPlayer.new()
 		add_child(explosion_sound)
 		explosion_sound.stream = explosion_stream
-		explosion_sound.volume_db = -6.0  # Half volume (-6dB is approximately half the perceived volume)
+		explosion_sound.volume_db = -16.5  # 70% volume reduction from original (30% of original, ~15% of original perceived volume)
 		print("[TNT] Explosion sound loaded")
 	else:
 		print("[TNT] WARNING: Could not load explosion.mp3")
