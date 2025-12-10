@@ -67,8 +67,8 @@ var player_immune : bool = false  # Track if player is in immunity period
 # Difficulty system
 var current_difficulty_level : int = 1
 const LEVEL_1_THRESHOLD : int = 0      # Start at level 1
-const LEVEL_2_THRESHOLD : int = 10000  # Switch to level 2 at 10k distance
-const LEVEL_3_THRESHOLD : int = 200000 # Switch to level 3 at 20k distance
+const LEVEL_2_THRESHOLD : int = 50000  # Switch to level 2 at 50k distance
+const LEVEL_3_THRESHOLD : int = 100000 # Switch to level 3 at 100k distance
 
 # Score delta display variables
 var score_delta_timer: float = 0.0
