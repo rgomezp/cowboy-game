@@ -186,6 +186,11 @@ func on_powerup_button_pressed(powerup_name: String):
 		return  # Wrong powerup
 	if not is_displaying and not is_blinking:
 		return  # Not the right time
+	
+	# Prevent activating if a powerup is already active
+	if current_powerup and current_powerup.is_active:
+		print("[PowerUpManager] Powerup already active, ignoring button press")
+		return
 
 	# Find and activate the powerup
 	for powerup in available_powerups:

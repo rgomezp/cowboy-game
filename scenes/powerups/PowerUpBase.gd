@@ -15,6 +15,10 @@ func _init(powerup_name: String, powerup_duration: float):
 
 # Called when powerup is activated
 func activate(main_node: Node) -> void:
+	# Prevent double activation
+	if is_active:
+		print("[PowerUpBase] Powerup ", name, " is already active, ignoring duplicate activation")
+		return
 	is_active = true
 	elapsed_time = 0.0
 	_on_activate(main_node)
