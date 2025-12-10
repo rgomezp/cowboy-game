@@ -8,6 +8,7 @@ var available_powerups: Array[PowerUpBase] = []
 var current_powerup: PowerUpBase = null
 var powerup_ui: CanvasLayer = null
 var lives_manager: Node = null
+var is_activating: bool = false  # Track if we're currently activating a powerup
 
 # Selection phase
 var is_selecting: bool = false
@@ -94,6 +95,8 @@ func update(delta: float, main_node: Node):
 		if not current_powerup.is_active:
 			current_powerup = null
 			powerup_deactivated.emit(selected_powerup_name)
+			# Clear activation flag when powerup deactivates
+			is_activating = false
 
 	# Handle selection phase
 	if is_selecting:
@@ -187,6 +190,11 @@ func on_powerup_button_pressed(powerup_name: String):
 	if not is_displaying and not is_blinking:
 		return  # Not the right time
 	
+	# Prevent activating if we're already in the process of activating
+	if is_activating:
+		print("[PowerUpManager] Already activating a powerup, ignoring button press")
+		return
+	
 	# Prevent activating if a powerup is already active
 	if current_powerup and current_powerup.is_active:
 		print("[PowerUpManager] Powerup already active, ignoring button press")
@@ -199,6 +207,14 @@ func on_powerup_button_pressed(powerup_name: String):
 			break
 
 func activate_powerup(powerup: PowerUpBase):
+	# Prevent double activation
+	if is_activating:
+		print("[PowerUpManager] Already activating, ignoring duplicate call")
+		return
+	
+	# Set activation flag
+	is_activating = true
+	
 	# Activate the powerup
 	current_powerup = powerup
 	powerup.activate(get_parent())
@@ -214,6 +230,10 @@ func activate_powerup(powerup: PowerUpBase):
 	selected_powerup_name = ""
 
 	powerup_activated.emit(powerup.name)
+	
+	# Clear activation flag after a short delay to allow instant powerups to complete
+	# Use call_deferred to ensure this happens after the activation completes
+	call_deferred("_clear_activation_flag")
 
 func is_powerup_active() -> bool:
 	return current_powerup != null and current_powerup.is_active
@@ -231,3 +251,8 @@ func has_unused_powerup() -> bool:
 	# Check if there's a powerup that's been selected but not yet activated
 	# This includes powerups in display phase or blinking phase
 	return is_displaying or is_blinking
+
+func _clear_activation_flag():
+	# Clear the activation flag after activation completes
+	# This allows instant powerups (like heart) to complete before allowing another activation
+	is_activating = false
