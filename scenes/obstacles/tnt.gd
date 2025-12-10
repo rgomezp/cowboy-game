@@ -4,12 +4,24 @@ signal explosion_finished
 
 var is_exploding: bool = false
 var main_scene: Node = null
+var explosion_sound: AudioStreamPlayer = null
 
 func _ready() -> void:
 	# Get main scene reference
 	var tree = get_tree()
 	if tree:
 		main_scene = tree.current_scene
+	
+	# Load explosion sound
+	var explosion_stream = load("res://assets/audio/effects/explosion.mp3")
+	if explosion_stream:
+		explosion_sound = AudioStreamPlayer.new()
+		add_child(explosion_sound)
+		explosion_sound.stream = explosion_stream
+		explosion_sound.volume_db = -6.0  # Half volume (-6dB is approximately half the perceived volume)
+		print("[TNT] Explosion sound loaded")
+	else:
+		print("[TNT] WARNING: Could not load explosion.mp3")
 
 func trigger_explosion(from_collision: bool = false, apply_bounce: bool = true) -> void:
 	# Prevent multiple explosions
@@ -20,6 +32,11 @@ func trigger_explosion(from_collision: bool = false, apply_bounce: bool = true) 
 	
 	# Disable collisions immediately
 	_disable_collisions()
+	
+	# Play explosion sound
+	if explosion_sound and explosion_sound.stream:
+		explosion_sound.play()
+		print("[TNT] Playing explosion sound")
 	
 	# If triggered from player collision, handle player bounce and stop movement
 	# Only apply bounce if explicitly requested (for game over scenarios)
