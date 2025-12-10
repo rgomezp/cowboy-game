@@ -17,6 +17,14 @@ func handle_obstacle_collision(body: Node, obstacle: Node):
 	var is_player = body == player or body.name == "Player" or body.name == "Player2"
 	print("[CollisionHandler] is_player=", is_player, " body==player=", (body == player), " body.name=", body.name)
 
+	# Check if player is immune (blinking after losing a life)
+	if is_player and main_node:
+		# Access player_immune property (will be false if it doesn't exist)
+		var is_immune = main_node.get("player_immune")
+		if is_immune:
+			print("[CollisionHandler] Player is immune - ignoring collision with: ", obstacle.name)
+			return
+
 	# Check if gokart powerup is active - disable all player collisions during gokart
 	if main_node and main_node.powerup_manager:
 		var active_powerup = main_node.powerup_manager.get_active_powerup()

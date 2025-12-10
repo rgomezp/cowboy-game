@@ -7,6 +7,7 @@ signal powerup_deactivated(powerup_name: String)
 var available_powerups: Array[PowerUpBase] = []
 var current_powerup: PowerUpBase = null
 var powerup_ui: CanvasLayer = null
+var lives_manager: Node = null
 
 # Selection phase
 var is_selecting: bool = false
@@ -31,9 +32,10 @@ const BLINK_COUNT: int = 5  # 5 blinks
 # Selected powerup name
 var selected_powerup_name: String = ""
 
-func initialize(powerups: Array[PowerUpBase], ui: CanvasLayer):
+func initialize(powerups: Array[PowerUpBase], ui: CanvasLayer, lives_mgr: Node = null):
 	available_powerups = powerups
 	powerup_ui = ui
+	lives_manager = lives_mgr
 
 func reset():
 	# Cancel any active powerup
@@ -56,6 +58,16 @@ func reset():
 	# Hide UI
 	if powerup_ui:
 		powerup_ui.hide_all_buttons()
+
+func get_available_powerups_for_selection() -> Array[PowerUpBase]:
+	# Filter out heart_powerup if player has max lives
+	var filtered: Array[PowerUpBase] = []
+	for powerup in available_powerups:
+		if powerup.name == "heart_powerup":
+			if lives_manager and lives_manager.is_at_max():
+				continue  # Skip heart_powerup if at max lives
+		filtered.append(powerup)
+	return filtered
 
 func start_powerup_selection():
 	# Start the selection process
@@ -88,11 +100,14 @@ func update(delta: float, main_node: Node):
 		selection_timer += delta
 		last_cycle_time += delta
 
+		# Get filtered powerups (excluding heart if at max lives)
+		var filtered_powerups = get_available_powerups_for_selection()
+		
 		# Cycle through powerups
-		if last_cycle_time >= selection_cycle_interval and available_powerups.size() > 0:
-			current_selection_index = (current_selection_index + 1) % available_powerups.size()
+		if last_cycle_time >= selection_cycle_interval and filtered_powerups.size() > 0:
+			current_selection_index = (current_selection_index + 1) % filtered_powerups.size()
 			if powerup_ui:
-				powerup_ui.show_button(available_powerups[current_selection_index].name)
+				powerup_ui.show_button(filtered_powerups[current_selection_index].name)
 			last_cycle_time = 0.0
 
 		# After 2 seconds, select random powerup
@@ -126,12 +141,15 @@ func update(delta: float, main_node: Node):
 				waste_powerup()
 
 func select_random_powerup():
+	# Get filtered powerups (excluding heart if at max lives)
+	var filtered_powerups = get_available_powerups_for_selection()
+	
 	# Select a random powerup from available ones
-	if available_powerups.size() == 0:
+	if filtered_powerups.size() == 0:
 		return
 
-	var random_index = randi() % available_powerups.size()
-	selected_powerup_name = available_powerups[random_index].name
+	var random_index = randi() % filtered_powerups.size()
+	selected_powerup_name = filtered_powerups[random_index].name
 
 	# Switch to display phase
 	is_selecting = false

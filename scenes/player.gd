@@ -13,6 +13,13 @@ var has_double_jumped: bool = false
 var jump_peak_y: float = 0.0
 var is_tracking_peak: bool = false
 
+# Blinking/immunity state
+var is_blinking: bool = false
+var blink_timer: float = 0.0
+var blink_count: int = 0
+var total_blinks: int = 0
+const BLINK_DURATION: float = 0.2  # Time for each blink (on/off cycle)
+
 
 func _is_shotgun_active() -> bool:
 	# Check if shotgun power up is active
@@ -146,3 +153,33 @@ func _physics_process(delta: float) -> void:
 			$AnimatedSprite2D.play(_get_animation_name("jumping"))
 
 	move_and_slide()
+	
+	# Handle blinking
+	if is_blinking:
+		blink_timer += delta
+		if blink_timer >= BLINK_DURATION:
+			blink_timer = 0.0
+			blink_count += 1
+			# Toggle visibility
+			$AnimatedSprite2D.visible = (blink_count % 2 == 0)
+			
+			# Check if we've completed all blinks (3 blinks = 6 toggles)
+			if blink_count >= total_blinks * 2:
+				stop_blinking()
+
+func start_blinking(blink_times: int):
+	is_blinking = true
+	blink_timer = 0.0
+	blink_count = 0
+	total_blinks = blink_times
+	$AnimatedSprite2D.visible = true  # Start visible
+
+func stop_blinking():
+	is_blinking = false
+	blink_timer = 0.0
+	blink_count = 0
+	$AnimatedSprite2D.visible = true  # Ensure visible when done
+	# Notify main that immunity period is over
+	var main_node = get_parent()
+	if main_node and main_node.has_method("end_player_immunity"):
+		main_node.end_player_immunity()

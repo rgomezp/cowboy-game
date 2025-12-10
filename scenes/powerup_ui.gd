@@ -9,6 +9,7 @@ func _ready():
 	# Initialize buttons dictionary
 	buttons["gokart"] = $GokartButton
 	buttons["shotgun"] = $ShotgunButton
+	buttons["heart_powerup"] = $HeartButton
 
 	# Hide all buttons initially
 	hide_all_buttons()
@@ -18,6 +19,9 @@ func _on_gokart_button_pressed():
 
 func _on_shotgun_button_pressed():
 	powerup_button_pressed.emit("shotgun")
+
+func _on_heart_button_pressed():
+	powerup_button_pressed.emit("heart_powerup")
 
 func show_button(powerup_name: String):
 	# Hide all buttons first

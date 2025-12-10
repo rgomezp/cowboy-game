@@ -1,8 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://cqrgcmewur2n5"]
+[gd_scene load_steps=3 format=3 uid="uid://cqrgcmewur2n5"]
 
+[ext_resource type="Script" path="res://scenes/HUD.gd" id="1_script"]
 [ext_resource type="FontFile" uid="uid://bbd3nccrf57vt" path="res://assets/fonts/retro.ttf" id="1_qpvh6"]
 
 [node name="Hud" type="CanvasLayer"]
+script = ExtResource("1_script")
 
 [node name="ScoreLabel" type="Label" parent="."]
 offset_left = 54.0

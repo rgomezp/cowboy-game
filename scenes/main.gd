@@ -26,12 +26,14 @@ var FoeManager = preload("res://scenes/FoeManager.gd")
 var CollisionHandler = preload("res://scenes/CollisionHandler.gd")
 var SpecialEventManager = preload("res://scenes/SpecialEventManager.gd")
 var PowerUpManager = preload("res://scenes/PowerUpManager.gd")
+var LivesManager = preload("res://scenes/LivesManager.gd")
 # Preload PowerUpBase first to ensure class_name is registered
 # This ensures the class is available when other powerup scripts extend it
 @warning_ignore("unused_private_class_variable")
 var _powerup_base = preload("res://scenes/powerups/PowerUpBase.gd")
 var GokartPowerUp = preload("res://scenes/powerups/GokartPowerUp.gd")
 var ShotgunPowerUp = preload("res://scenes/powerups/ShotgunPowerUp.gd")
+var HeartPowerUp = preload("res://scenes/powerups/HeartPowerUp.gd")
 
 # Manager instances
 var score_manager: Node
@@ -44,6 +46,7 @@ var foe_manager: Node
 var collision_handler: Node
 var special_event_manager: Node
 var powerup_manager: Node
+var lives_manager: Node
 
 const PLAYER_START_POS := Vector2i(19, 166)
 const CAMERA_START_POS := Vector2i(540, 960)
@@ -58,6 +61,7 @@ var ground_height : int
 var distance : int = 0  # Track actual distance traveled, separate from score
 var game_over_in_progress : bool = false  # Track if game over is already triggered
 var explosion_in_progress : bool = false  # Track if TNT explosion is playing (stops movement)
+var player_immune : bool = false  # Track if player is in immunity period
 
 # Difficulty system
 var current_difficulty_level : int = 1
@@ -143,16 +147,25 @@ func setup_managers():
 	collision_handler.player_jumped_on_foe.connect(_on_player_jumped_on_foe)
 	collision_handler.initialize($Player, self)
 
+	# Initialize lives manager
+	lives_manager = LivesManager.new()
+	add_child(lives_manager)
+	lives_manager.life_lost.connect(_on_life_lost)
+
 	# Initialize powerup manager first (needed by special event manager)
 	powerup_manager = PowerUpManager.new()
 	add_child(powerup_manager)
 	var gokart_powerup = GokartPowerUp.new()
 	var shotgun_powerup = ShotgunPowerUp.new()
-	var powerups: Array[PowerUpBase] = [gokart_powerup,shotgun_powerup]
-	powerup_manager.initialize(powerups, $PowerUpUI)
+	var heart_powerup = HeartPowerUp.new()
+	var powerups: Array[PowerUpBase] = [gokart_powerup, shotgun_powerup, heart_powerup]
+	powerup_manager.initialize(powerups, $PowerUpUI, lives_manager)
 	powerup_manager.powerup_activated.connect(_on_powerup_activated)
 	powerup_manager.powerup_deactivated.connect(_on_powerup_deactivated)
 	$PowerUpUI.powerup_button_pressed.connect(powerup_manager.on_powerup_button_pressed)
+
+	# Initialize HUD with lives manager
+	$Hud.initialize(lives_manager)
 
 	# Initialize powerup HUD
 	$PowerUpHud.initialize(powerup_manager)
@@ -203,6 +216,10 @@ func new_game():
 	special_event_manager.reset()
 	if powerup_manager:
 		powerup_manager.reset()
+	if lives_manager:
+		lives_manager.reset()
+	if $Hud:
+		$Hud.reset()
 
 	# Ensure all spawners are enabled (in case game was restarted during a special event)
 	set_all_spawning_enabled(true)
@@ -419,30 +436,53 @@ func _on_foe_added(foe: Node):
 	collision_handler.connect_obstacle_signals(foe)
 
 func _on_player_hit_obstacle(obstacle: Node):
-	# Prevent multiple game over triggers
-	if game_over_in_progress:
+	# Prevent multiple triggers during immunity or game over
+	if game_over_in_progress or player_immune:
 		return
 
-	# Check if obstacle is TNT - if so, play explosion animation before game over
+	# Check if obstacle is TNT - handle TNT explosion separately
 	if _is_tnt(obstacle):
 		# Remove from obstacle manager immediately
 		if obstacle_manager.obstacles.has(obstacle):
 			obstacle_manager.obstacles.erase(obstacle)
 
-		# Trigger explosion (from_collision=true to handle player bounce)
+		# Trigger explosion animation (from_collision=true to handle player bounce)
 		if obstacle.has_method("trigger_explosion"):
-			# Connect to explosion finished signal before triggering
-			if obstacle.has_signal("explosion_finished"):
-				# Disconnect first to avoid duplicate connections
-				if obstacle.explosion_finished.is_connected(_on_tnt_explosion_finished_game_over):
-					obstacle.explosion_finished.disconnect(_on_tnt_explosion_finished_game_over)
-				obstacle.explosion_finished.connect(_on_tnt_explosion_finished_game_over)
-			obstacle.trigger_explosion(true)
+			# Check if player has lives - if so, use a life after explosion
+			if lives_manager and lives_manager.has_lives():
+				# Connect to explosion finished signal to use a life
+				if obstacle.has_signal("explosion_finished"):
+					# Disconnect first to avoid duplicate connections
+					if obstacle.explosion_finished.is_connected(_on_tnt_explosion_finished_with_life):
+						obstacle.explosion_finished.disconnect(_on_tnt_explosion_finished_with_life)
+					obstacle.explosion_finished.connect(_on_tnt_explosion_finished_with_life)
+				obstacle.trigger_explosion(true)
+			else:
+				# No lives - connect to game over handler
+				if obstacle.has_signal("explosion_finished"):
+					# Disconnect first to avoid duplicate connections
+					if obstacle.explosion_finished.is_connected(_on_tnt_explosion_finished_game_over):
+						obstacle.explosion_finished.disconnect(_on_tnt_explosion_finished_game_over)
+					obstacle.explosion_finished.connect(_on_tnt_explosion_finished_game_over)
+				obstacle.trigger_explosion(true)
 		else:
 			# Fallback if script not attached
-			game_over()
-	else:
-		game_over()
+			# Check if player has lives
+			if lives_manager and lives_manager.has_lives():
+				lives_manager.remove_life()
+			else:
+				game_over()
+		return
+
+	# Not TNT - check if player has lives for other obstacles
+	if lives_manager and lives_manager.has_lives():
+		# Use a life and trigger immunity/blinking
+		lives_manager.remove_life()
+		# Note: _on_life_lost will handle the blinking and immunity
+		return
+
+	# No lives remaining - proceed with game over
+	game_over()
 
 func _on_player_bounced_on_butterfly(obstacle: Node):
 	# Player jumped on the butterfly from the top - bounce and destroy it
@@ -506,11 +546,39 @@ func set_explosion_in_progress(value: bool) -> void:
 	# Setter method for TNT script to control explosion state
 	explosion_in_progress = value
 
+func _on_tnt_explosion_finished_with_life() -> void:
+	# TNT explosion finished - player has lives, so use a life
+	explosion_in_progress = false
+	if lives_manager and lives_manager.has_lives():
+		lives_manager.remove_life()
+		# Note: _on_life_lost will handle the blinking and immunity
+
 func _on_tnt_explosion_finished_game_over() -> void:
 	# Trigger game over after explosion animation finishes
 	# Reset explosion flag (though game_over will pause anyway)
 	explosion_in_progress = false
+	# No lives remaining - proceed with game over
 	game_over()
+
+func _on_life_lost(lives_remaining: int):
+	# Player lost a life - trigger blinking and immunity
+	if lives_remaining >= 0:
+		start_player_immunity()
+	else:
+		# No lives remaining - should have been handled in collision, but just in case
+		game_over()
+
+func start_player_immunity():
+	# Start player blinking and immunity period
+	player_immune = true
+	$Player.start_blinking(3)  # Blink 3 times
+	# Immunity duration: 3 blinks * 2 toggles * 0.2 seconds = 1.2 seconds total
+	# We'll end immunity after blinking completes (handled in player.stop_blinking)
+
+func end_player_immunity():
+	# Called when player finishes blinking
+	player_immune = false
+	print("[Main] Player immunity ended")
 
 # Spawning control methods for special events
 func set_obstacle_spawning_enabled(enabled: bool):
