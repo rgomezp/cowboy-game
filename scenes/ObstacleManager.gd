@@ -109,9 +109,16 @@ func generate_obstacle(current_distance: int, camera_x: float) -> Array:
 
 	var obstacles_to_spawn: Array = []
 
-	# At level 2+, spawn single or pairs of obstacles
-	var one_or_two = randi_range(1, 2)
-	var spawn_count = one_or_two if difficulty_level >= 2 else 1
+	# Determine spawn count based on difficulty level
+	var spawn_count: int
+	if difficulty_level == 1:
+		spawn_count = 1
+	elif difficulty_level == 2:
+		# Level 2: spawn 1-2 obstacles
+		spawn_count = randi_range(1, 2)
+	else:  # Level 3
+		# Level 3: spawn 1-3 obstacles
+		spawn_count = randi_range(1, 3)
 
 	# Use actual camera position passed from main.gd
 	var base_x = int(camera_x) + screen_size.x + 100
