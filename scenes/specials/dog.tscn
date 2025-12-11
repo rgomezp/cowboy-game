@@ -1,0 +1,35 @@
+[gd_scene load_steps=6 format=3 uid="uid://dog_special_001"]
+
+[ext_resource type="Script" uid="uid://dfo8lwvbbnylk" path="res://scenes/specials/special.gd" id="1_dog"]
+[ext_resource type="Texture2D" path="res://assets/img/specials/dog_sprite_sheet.png" id="2_dog"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame1"]
+atlas = ExtResource("2_dog")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_frame2"]
+atlas = ExtResource("2_dog")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_dog"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_frame1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_frame2")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="Dog" type="Node2D"]
+script = ExtResource("1_dog")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(4, 4)
+sprite_frames = SubResource("SpriteFrames_dog")
+autoplay = "default"

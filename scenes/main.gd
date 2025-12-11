@@ -20,6 +20,7 @@ var rods_bbq_scene = preload("res://scenes/specials/rods_bbq.tscn")
 var go_vegan_scene = preload("res://scenes/specials/go_vegan.tscn")
 var pirate_scene = preload("res://scenes/specials/pirate.tscn")
 var lizard_scene = preload("res://scenes/specials/lizard.tscn")
+var dog_scene = preload("res://scenes/specials/dog.tscn")
 
 # Preload manager scripts
 var ScoreManager = preload("res://scenes/ScoreManager.gd")
@@ -215,7 +216,7 @@ func setup_managers():
 	add_child(special_event_manager)
 	special_event_manager.special_event_started.connect(_on_special_event_started)
 	special_event_manager.special_event_ended.connect(_on_special_event_ended)
-	var special_types: Array[PackedScene] = [texas_flag_scene, us_flag_scene, cheerleader_scene, smoker_scene, devil_plush_scene, man_baby_scene, motorcycle_scene, hollywood_2_scene, rods_bbq_scene, go_vegan_scene, pirate_scene, lizard_scene]
+	var special_types: Array[PackedScene] = [texas_flag_scene, us_flag_scene, cheerleader_scene, smoker_scene, devil_plush_scene, man_baby_scene, motorcycle_scene, hollywood_2_scene, rods_bbq_scene, go_vegan_scene, pirate_scene, lizard_scene, dog_scene]
 	special_event_manager.initialize(special_types, screen_size, ground_sprite, $SpecialGround, $SpecialEventButtons, powerup_manager)
 
 	# Connect button signals
