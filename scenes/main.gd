@@ -36,6 +36,10 @@ var SpecialEventManager = preload("res://scenes/SpecialEventManager.gd")
 var PowerUpManager = preload("res://scenes/PowerUpManager.gd")
 var LivesManager = preload("res://scenes/LivesManager.gd")
 var AudioManager = preload("res://scenes/AudioManager.gd")
+var AudioSetupManager = preload("res://scenes/AudioSetupManager.gd")
+var DifficultyManager = preload("res://scenes/DifficultyManager.gd")
+var SpawningController = preload("res://scenes/SpawningController.gd")
+var TNTExplosionHandler = preload("res://scenes/TNTExplosionHandler.gd")
 # Preload PowerUpBase first to ensure class_name is registered
 # This ensures the class is available when other powerup scripts extend it
 @warning_ignore("unused_private_class_variable")
@@ -57,6 +61,10 @@ var special_event_manager: Node
 var powerup_manager: Node
 var lives_manager: Node
 var audio_manager: Node
+var audio_setup_manager: Node
+var difficulty_manager: Node
+var spawning_controller: Node
+var tnt_explosion_handler: Node
 
 const PLAYER_START_POS := Vector2i(19, 166)
 const CAMERA_START_POS := Vector2i(540, 960)
@@ -73,23 +81,8 @@ var ground_1 : StaticBody2D
 var ground_2 : StaticBody2D
 var distance : int = 0  # Track actual distance traveled, separate from score
 var game_over_in_progress : bool = false  # Track if game over is already triggered
-var explosion_in_progress : bool = false  # Track if TNT explosion is playing (stops movement)
 var player_immune : bool = false  # Track if player is in immunity period
 var touch_start_detected : bool = false  # Track if touch was detected to start game
-
-# Difficulty system
-var current_difficulty_level : int = 1
-var previous_difficulty_level : int = 1  # Track previous level to detect changes
-const LEVEL_1_THRESHOLD : int = 0       # Start at level 1
-const LEVEL_2_THRESHOLD : int = 37500  # Switch to level 2 at 37.5k distance
-const LEVEL_3_THRESHOLD : int = 75000  # Switch to level 3 at 75k distance
-const LEVEL_4_THRESHOLD : int = 112500 # Switch to level 4 at 112.5k distance
-
-# Speed transition system
-var target_speed : float = 10.0  # Target speed for current difficulty level
-var transition_start_speed : float = 10.0  # Speed when transition started
-var speed_transition_timer : float = 0.0  # Timer for speed transition (0-5 seconds)
-const SPEED_TRANSITION_DURATION : float = 5.0  # 5 seconds to reach new speed
 
 # Score delta display variables
 var score_delta_timer: float = 0.0
@@ -121,19 +114,6 @@ func _ready() -> void:
 
 	# Hide score delta label initially
 	$Hud.get_node("ScoreValueDelta").hide()
-
-	# Initialize iOS audio session if on iOS
-	_initialize_ios_audio()
-
-	# Initialize Input singleton early on iOS to prevent motion handler crash
-	# This ensures Input is fully initialized before motion events can occur
-	_initialize_ios_input()
-
-	# Setup music
-	setup_music()
-
-	# Setup sound effects
-	setup_sound_effects()
 
 	new_game()
 
@@ -235,161 +215,38 @@ func setup_managers():
 	$SpecialEventButtons.button_pressed.connect(_on_special_button_pressed)
 	$SpecialEventButtons.buttons_hidden.connect(_on_special_buttons_hidden)
 
-func _initialize_ios_audio():
-	# Configure audio for iOS - ensure audio session is active
-	# This helps with audio playback on iOS devices
-	if OS.get_name() == "iOS":
-		# Set audio bus volume to ensure audio plays
-		var master_bus = AudioServer.get_bus_index("Master")
-		if master_bus >= 0:
-			AudioServer.set_bus_volume_db(master_bus, 0.0)
-		print("[Main] iOS audio session initialized")
-
-func _initialize_ios_input():
-	# Workaround for iOS motion handler crash on older devices (iPhone 7, etc.)
-	# The crash occurs when Input::set_gravity() is called from motion handler
-	# before the Input singleton's mutex is fully initialized.
-	# By accessing Input methods early, we force initialization of the Input singleton
-	# before any motion events can occur.
-	if OS.get_name() == "iOS":
-		# Force Input singleton initialization by accessing it
-		# This ensures the internal mutex is initialized before motion handlers run
-		var _gravity = Input.get_gravity()
-		var _accel = Input.get_accelerometer()
-		var _gyro = Input.get_gyroscope()
-		# Access these even if we don't use them - just to force initialization
-		print("[Main] iOS Input singleton initialized (motion handler workaround)")
-
-func setup_music():
-	# Load the music file
-	var music_stream = load("res://assets/audio/songs/desert.mp3")
-	if music_stream:
-		$MusicPlayer.stream = music_stream
-		# Set music to loop (for AudioStreamMP3, AudioStreamOggVorbis, etc.)
-		if music_stream is AudioStreamMP3:
-			music_stream.loop = true
-		elif music_stream is AudioStreamOggVorbis:
-			music_stream.loop = true
-		# Start playing
-		$MusicPlayer.play()
-		print("[Main] Music started, playing: ", $MusicPlayer.playing)
-
-func reset_music():
-	# Stop the music and restart from the beginning
-	if $MusicPlayer and $MusicPlayer.stream:
-		if $MusicPlayer.playing:
-			$MusicPlayer.stop()
-		$MusicPlayer.play()
-
-func setup_sound_effects():
-	# Load sound effect audio streams
-	# Note: Audio files need to be imported by Godot first (open project in editor)
-	# Try both ResourceLoader.load() and load() in case files need to be imported first
-	var alright_stream = null
-	var mhm_stream = null
-	var makes_sense_stream = null
-	var hwhat_stream = null
-
-	print("[Main] Loading sound effects...")
-
-	# Try loading with ResourceLoader first (handles imported resources)
-	# Using .ogg format as Godot doesn't support .m4a natively
-	var alright_path = "res://assets/audio/connor/alright.ogg"
-	if ResourceLoader.exists(alright_path):
-		alright_stream = ResourceLoader.load(alright_path)
-		print("[Main] alright.ogg exists in ResourceLoader")
-	else:
-		print("[Main] WARNING: alright.ogg not found in ResourceLoader, trying direct load")
-		alright_stream = load(alright_path)
-
-	var mhm_path = "res://assets/audio/connor/mhm.ogg"
-	if ResourceLoader.exists(mhm_path):
-		mhm_stream = ResourceLoader.load(mhm_path)
-		print("[Main] mhm.ogg exists in ResourceLoader")
-	else:
-		print("[Main] WARNING: mhm.ogg not found in ResourceLoader, trying direct load")
-		mhm_stream = load(mhm_path)
-
-	var makes_sense_path = "res://assets/audio/connor/makes_sense.ogg"
-	if ResourceLoader.exists(makes_sense_path):
-		makes_sense_stream = ResourceLoader.load(makes_sense_path)
-		print("[Main] makes_sense.ogg exists in ResourceLoader")
-	else:
-		print("[Main] WARNING: makes_sense.ogg not found in ResourceLoader, trying direct load")
-		makes_sense_stream = load(makes_sense_path)
-
-	var hwhat_path = "res://assets/audio/connor/hwhat.ogg"
-	if ResourceLoader.exists(hwhat_path):
-		hwhat_stream = ResourceLoader.load(hwhat_path)
-		print("[Main] hwhat.ogg exists in ResourceLoader")
-	else:
-		print("[Main] WARNING: hwhat.ogg not found in ResourceLoader, trying direct load")
-		hwhat_stream = load(hwhat_path)
-
-	print("[Main] alright_stream loaded: ", alright_stream != null, " (type: ", typeof(alright_stream), ")")
-	print("[Main] mhm_stream loaded: ", mhm_stream != null, " (type: ", typeof(mhm_stream), ")")
-	print("[Main] makes_sense_stream loaded: ", makes_sense_stream != null, " (type: ", typeof(makes_sense_stream), ")")
-	print("[Main] hwhat_stream loaded: ", hwhat_stream != null, " (type: ", typeof(hwhat_stream), ")")
-
-	# Check if any streams failed to load
-	if not alright_stream or not mhm_stream or not makes_sense_stream or not hwhat_stream:
-		print("[Main] ========================================")
-		print("[Main] WARNING: Some audio files failed to load!")
-		print("[Main] Make sure the .ogg files exist and have been imported by Godot.")
-		print("[Main] SOLUTION: Open the project in Godot editor to trigger audio import.")
-		print("[Main] ========================================")
-
-	if alright_stream and $AlrightSound:
-		$AlrightSound.stream = alright_stream
-		$AlrightSound.volume_db = 0.0  # Set volume to 0dB (full volume)
-		print("[Main] AlrightSound configured, stream type: ", alright_stream.get_class() if alright_stream else "null")
-	else:
-		print("[Main] ERROR: Failed to configure AlrightSound - stream: ", alright_stream, ", node: ", $AlrightSound != null)
-
-	if mhm_stream and $MhmSound:
-		$MhmSound.stream = mhm_stream
-		$MhmSound.volume_db = 0.0
-		print("[Main] MhmSound configured, stream type: ", mhm_stream.get_class() if mhm_stream else "null")
-	else:
-		print("[Main] ERROR: Failed to configure MhmSound - stream: ", mhm_stream, ", node: ", $MhmSound != null)
-
-	if makes_sense_stream and $MakesSenseSound:
-		$MakesSenseSound.stream = makes_sense_stream
-		$MakesSenseSound.volume_db = 0.0
-		print("[Main] MakesSenseSound configured, stream type: ", makes_sense_stream.get_class() if makes_sense_stream else "null")
-	else:
-		print("[Main] ERROR: Failed to configure MakesSenseSound - stream: ", makes_sense_stream, ", node: ", $MakesSenseSound != null)
-
-	if hwhat_stream and $HwhatSound:
-		$HwhatSound.stream = hwhat_stream
-		$HwhatSound.volume_db = 0.0
-		print("[Main] HwhatSound configured, stream type: ", hwhat_stream.get_class() if hwhat_stream else "null")
-	else:
-		print("[Main] ERROR: Failed to configure HwhatSound - stream: ", hwhat_stream, ", node: ", $HwhatSound != null)
-
-	# Lower music volume to make sound effects more audible
-	if $MusicPlayer:
-		$MusicPlayer.volume_db = -10.0  # Lower music by 10dB
-		print("[Main] Music volume lowered to -10dB")
-
 	# Initialize audio manager for Connor's voice lines ONLY
 	# NOTE: This mutex mechanism only applies to Connor's voice lines
 	# Background music (MusicPlayer) and other audio are NOT affected by this mutex
 	audio_manager = AudioManager.new()
 	add_child(audio_manager)
-	var audio_players_dict = {
-		"alright": $AlrightSound,
-		"mhm": $MhmSound,
-		"makes_sense": $MakesSenseSound,
-		"hwhat": $HwhatSound
-	}
-	audio_manager.initialize(audio_players_dict)
-	print("[Main] AudioManager initialized (Connor voice lines only)")
+
+	# Initialize audio setup manager
+	audio_setup_manager = AudioSetupManager.new()
+	add_child(audio_setup_manager)
+	audio_setup_manager.initialize($MusicPlayer, audio_manager)
+	audio_setup_manager.setup()
+
+	# Initialize difficulty manager
+	difficulty_manager = DifficultyManager.new()
+	add_child(difficulty_manager)
+	difficulty_manager.difficulty_level_changed.connect(_on_difficulty_level_changed)
+
+	# Initialize spawning controller
+	spawning_controller = SpawningController.new()
+	add_child(spawning_controller)
+	spawning_controller.initialize(obstacle_manager, foe_spawner, coin_spawner, butterfly_spawner, distance)
+
+	# Initialize TNT explosion handler
+	tnt_explosion_handler = TNTExplosionHandler.new()
+	add_child(tnt_explosion_handler)
+	tnt_explosion_handler.initialize(obstacle_manager, lives_manager, self)
+	tnt_explosion_handler.explosion_started.connect(_on_explosion_started)
+	tnt_explosion_handler.explosion_finished.connect(_on_explosion_finished)
 
 func new_game():
-	# Reset game over and explosion flags
+	# Reset game over flag
 	game_over_in_progress = false
-	explosion_in_progress = false
 
 	# Reset managers
 	score_manager.reset()
@@ -406,20 +263,20 @@ func new_game():
 		lives_manager.reset()
 	if audio_manager:
 		audio_manager.reset()
+	if difficulty_manager:
+		difficulty_manager.reset()
+	if tnt_explosion_handler:
+		tnt_explosion_handler.reset()
 	if $Hud:
 		$Hud.reset()
 
 	# Ensure all spawners are enabled (in case game was restarted during a special event)
-	set_all_spawning_enabled(true)
+	spawning_controller.set_all_spawning_enabled(true)
 
 	game_running = false
 	get_tree().paused = false
 	distance = 0  # Reset distance
-	current_difficulty_level = 1  # Reset to level 1
-	previous_difficulty_level = 1  # Reset previous level
-	target_speed = 10.0  # Reset to level 1 speed
-	transition_start_speed = 10.0  # Reset transition start speed
-	speed_transition_timer = SPEED_TRANSITION_DURATION  # Set to complete so speed is immediately at target
+	spawning_controller.set_distance(distance)
 	speed = 10.0  # Set initial speed
 
 	# Reset the nodes
@@ -441,56 +298,26 @@ func new_game():
 	score_delta_timer = 0.0
 
 	# Reset music to play from the beginning
-	reset_music()
+	if audio_setup_manager:
+		audio_setup_manager.reset_music()
 
 	# Play "alright" when game starts/restarts
 	if audio_manager:
 		audio_manager.play_sound("alright")
 
-func update_difficulty_level():
-	# Determine difficulty level based on distance
-	var new_level = 1
-	if distance >= LEVEL_4_THRESHOLD:
-		new_level = 4
-	elif distance >= LEVEL_3_THRESHOLD:
-		new_level = 3
-	elif distance >= LEVEL_2_THRESHOLD:
-		new_level = 2
-	else:
-		new_level = 1
-
-	# Calculate target speed for the current/new level
-	var new_target_speed = 10.0
-	if new_level == 1:
-		new_target_speed = 10.0
-	elif new_level == 2:
-		new_target_speed = 12.0
-	elif new_level == 3:
-		new_target_speed = 14.0
-	else:  # Level 4
-		new_target_speed = 16.0
-
-	# Check if level changed
-	if new_level != current_difficulty_level:
-		# Level changed - start speed transition
-		previous_difficulty_level = current_difficulty_level
-		current_difficulty_level = new_level
-		transition_start_speed = speed  # Start transition from current speed
-		speed_transition_timer = 0.0  # Reset timer
-		target_speed = new_target_speed
-
-		print("[Main] Difficulty level changed to ", current_difficulty_level, ", transitioning speed from ", transition_start_speed, " to ", target_speed)
-	else:
-		# Level didn't change, but ensure target_speed is set (for initial case)
-		target_speed = new_target_speed
+func _on_difficulty_level_changed(_new_level: int):
+	# Called when difficulty level changes - start speed transition
+	difficulty_manager.start_speed_transition(speed)
+	update_hud_difficulty_level()
 
 func update_hud_difficulty_level():
 	# Update HUD with current difficulty level for debugging
+	var current_level = difficulty_manager.get_current_level()
 	if not $Hud.has_node("DifficultyLevel"):
 		# Create difficulty level label if it doesn't exist
 		var level_label = Label.new()
 		level_label.name = "DifficultyLevel"
-		level_label.text = "Level: " + str(current_difficulty_level)
+		level_label.text = "Level: " + str(current_level)
 		level_label.position = Vector2(54, 10)
 		var font = load("res://assets/fonts/retro.ttf")
 		if font:
@@ -498,7 +325,7 @@ func update_hud_difficulty_level():
 		level_label.add_theme_font_size_override("font_size", 40)
 		$Hud.add_child(level_label)
 	else:
-		$Hud.get_node("DifficultyLevel").text = "Level: " + str(current_difficulty_level)
+		$Hud.get_node("DifficultyLevel").text = "Level: " + str(current_level)
 
 # Game logic happens here
 func _process(delta: float) -> void:
@@ -508,24 +335,16 @@ func _process(delta: float) -> void:
 			powerup_manager.update(delta, self)
 
 		# Update difficulty level based on distance
-		update_difficulty_level()
+		difficulty_manager.update_difficulty_level(distance)
 
 		# Calculate speed with gradual transition
-		# If we're in a transition, interpolate between start and target speed
-		if speed_transition_timer < SPEED_TRANSITION_DURATION:
-			speed_transition_timer += delta
-			var progress = min(speed_transition_timer / SPEED_TRANSITION_DURATION, 1.0)  # Clamp to 0-1
-			# Linear interpolation from start speed to target speed
-			speed = lerpf(transition_start_speed, target_speed, progress)
-		else:
-			# Transition complete, use target speed directly
-			speed = target_speed
+		speed = difficulty_manager.update_speed_transition(delta, speed)
 
 		# Apply powerup speed modifier (e.g., from gokart)
 		speed *= powerup_manager.get_speed_modifier()
 
 		# Update obstacle manager with current difficulty level
-		obstacle_manager.set_difficulty_level(current_difficulty_level)
+		obstacle_manager.set_difficulty_level(difficulty_manager.get_current_level())
 
 		# Generate obstacles (returns array - single at level 1, pair at level 2+)
 		# Use actual camera position for accurate spawning
@@ -535,7 +354,7 @@ func _process(delta: float) -> void:
 				obstacle_manager.add_obstacle(new_obstacle)
 
 		# Update butterfly spawner with current difficulty level
-		butterfly_spawner.set_difficulty_level(current_difficulty_level)
+		butterfly_spawner.set_difficulty_level(difficulty_manager.get_current_level())
 
 		# Check butterfly spawning (always single, frequency adjusts with difficulty)
 		# Use actual camera position for accurate spawning
@@ -549,7 +368,7 @@ func _process(delta: float) -> void:
 			coin_manager.add_coin(coin)
 
 		# Update foe spawner with current difficulty level
-		foe_spawner.set_difficulty_level(current_difficulty_level)
+		foe_spawner.set_difficulty_level(difficulty_manager.get_current_level())
 
 		# Check foe spawning (always single, frequency adjusts with difficulty)
 		# Use actual camera position for accurate spawning
@@ -558,12 +377,13 @@ func _process(delta: float) -> void:
 			foe_manager.add_foe(foe)
 
 		# Move player position & camera (only if not in explosion)
-		if not explosion_in_progress:
+		if not tnt_explosion_handler.is_explosion_in_progress():
 			$Player.position.x += speed
 			$Camera2D.position.x += speed
 
 			# Update distance based on actual movement
 			distance += int(speed)
+			spawning_controller.set_distance(distance)
 
 			# Update score (separate from distance)
 			# Don't show delta for continuous movement score updates
@@ -682,39 +502,7 @@ func _on_player_hit_obstacle(obstacle: Node):
 		return
 
 	# Check if obstacle is TNT - handle TNT explosion separately
-	if _is_tnt(obstacle):
-		# Remove from obstacle manager immediately
-		if obstacle_manager.obstacles.has(obstacle):
-			obstacle_manager.obstacles.erase(obstacle)
-
-		# Trigger explosion animation
-		if obstacle.has_method("trigger_explosion"):
-			# Check if player has lives - if so, use a life after explosion (no bounce)
-			if lives_manager and lives_manager.has_lives():
-				# Connect to explosion finished signal to use a life
-				if obstacle.has_signal("explosion_finished"):
-					# Disconnect first to avoid duplicate connections
-					if obstacle.explosion_finished.is_connected(_on_tnt_explosion_finished_with_life):
-						obstacle.explosion_finished.disconnect(_on_tnt_explosion_finished_with_life)
-					obstacle.explosion_finished.connect(_on_tnt_explosion_finished_with_life)
-				# Trigger explosion with from_collision=true but apply_bounce=false (no bounce, just animation)
-				obstacle.trigger_explosion(true, false)
-			else:
-				# No lives - connect to game over handler (apply bounce for game over effect)
-				if obstacle.has_signal("explosion_finished"):
-					# Disconnect first to avoid duplicate connections
-					if obstacle.explosion_finished.is_connected(_on_tnt_explosion_finished_game_over):
-						obstacle.explosion_finished.disconnect(_on_tnt_explosion_finished_game_over)
-					obstacle.explosion_finished.connect(_on_tnt_explosion_finished_game_over)
-				# Trigger explosion with bounce (game over scenario)
-				obstacle.trigger_explosion(true, true)
-		else:
-			# Fallback if script not attached
-			# Check if player has lives
-			if lives_manager and lives_manager.has_lives():
-				lives_manager.remove_life()
-			else:
-				game_over()
+	if tnt_explosion_handler.handle_tnt_collision(obstacle):
 		return
 
 	# Not TNT - check if player has lives for other obstacles
@@ -779,37 +567,17 @@ func game_over():
 	game_running = false
 	$GameOver.show()
 
-func _is_tnt(obstacle: Node) -> bool:
-	# Check if obstacle is TNT by name or script path
-	if obstacle.name == "TNT":
-		return true
-	if obstacle.get_script() != null and obstacle.get_script().resource_path != null:
-		if "tnt" in obstacle.get_script().resource_path.to_lower():
-			return true
-	# Check scene file path if available
-	if obstacle.has_method("get_scene_file_path"):
-		var scene_path = obstacle.get_scene_file_path()
-		if scene_path and "tnt" in scene_path.to_lower():
-			return true
-	return false
+func _on_explosion_started():
+	# Called when TNT explosion starts
+	pass
+
+func _on_explosion_finished():
+	# Called when TNT explosion finishes
+	pass
 
 func set_explosion_in_progress(value: bool) -> void:
 	# Setter method for TNT script to control explosion state
-	explosion_in_progress = value
-
-func _on_tnt_explosion_finished_with_life() -> void:
-	# TNT explosion finished - player has lives, so use a life
-	explosion_in_progress = false
-	if lives_manager and lives_manager.has_lives():
-		lives_manager.remove_life()
-		# Note: _on_life_lost will handle the blinking and immunity
-
-func _on_tnt_explosion_finished_game_over() -> void:
-	# Trigger game over after explosion animation finishes
-	# Reset explosion flag (though game_over will pause anyway)
-	explosion_in_progress = false
-	# No lives remaining - proceed with game over
-	game_over()
+	tnt_explosion_handler.set_explosion_in_progress(value)
 
 func _on_life_lost(lives_remaining: int):
 	# Player lost a life - trigger blinking and immunity
@@ -831,49 +599,22 @@ func end_player_immunity():
 	player_immune = false
 	print("[Main] Player immunity ended")
 
-# Spawning control methods for special events
+# Spawning control methods for special events (delegate to SpawningController)
 func set_obstacle_spawning_enabled(enabled: bool):
-	var was_disabled = not obstacle_manager.is_spawning_enabled()
-	print("[Main] set_obstacle_spawning_enabled: enabled=", enabled, ", was_disabled=", was_disabled, ", distance=", distance)
-	obstacle_manager.set_spawning_enabled(enabled)
-	# Sync distance when re-enabling to fix timing after powerups
-	if enabled and was_disabled:
-		print("[Main] Syncing obstacle distance...")
-		obstacle_manager.sync_distance(distance)
+	spawning_controller.set_obstacle_spawning_enabled(enabled)
 
 func set_foe_spawning_enabled(enabled: bool):
-	var was_disabled = not foe_spawner.is_spawning_enabled()
-	print("[Main] set_foe_spawning_enabled: enabled=", enabled, ", was_disabled=", was_disabled, ", distance=", distance)
-	foe_spawner.set_spawning_enabled(enabled)
-	# Sync distance when re-enabling to fix timing after powerups
-	if enabled and was_disabled:
-		print("[Main] Syncing foe distance...")
-		foe_spawner.sync_distance(distance)
+	spawning_controller.set_foe_spawning_enabled(enabled)
 
 func set_coin_spawning_enabled(enabled: bool):
-	var was_disabled = not coin_spawner.is_spawning_enabled()
-	print("[Main] set_coin_spawning_enabled: enabled=", enabled, ", was_disabled=", was_disabled, ", distance=", distance)
-	coin_spawner.set_spawning_enabled(enabled)
-	# Reset timer when re-enabling to fix timing after powerups
-	if enabled and was_disabled:
-		print("[Main] Resetting coin timer...")
-		coin_spawner.reset_timer()
+	spawning_controller.set_coin_spawning_enabled(enabled)
 
 func set_butterfly_spawning_enabled(enabled: bool):
-	var was_disabled = not butterfly_spawner.is_spawning_enabled()
-	print("[Main] set_butterfly_spawning_enabled: enabled=", enabled, ", was_disabled=", was_disabled, ", distance=", distance)
-	butterfly_spawner.set_spawning_enabled(enabled)
-	# Reset timer when re-enabling to fix timing after powerups
-	if enabled and was_disabled:
-		print("[Main] Resetting butterfly timer...")
-		butterfly_spawner.reset_timer()
+	spawning_controller.set_butterfly_spawning_enabled(enabled)
 
 # Convenience method to enable/disable all spawning
 func set_all_spawning_enabled(enabled: bool):
-	set_obstacle_spawning_enabled(enabled)
-	set_foe_spawning_enabled(enabled)
-	set_coin_spawning_enabled(enabled)
-	set_butterfly_spawning_enabled(enabled)
+	spawning_controller.set_all_spawning_enabled(enabled)
 
 func _on_special_event_started():
 	# Disable obstacles, foes, and butterflies (keep coins enabled)
