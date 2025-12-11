@@ -144,6 +144,9 @@ func setup_managers():
 	score_manager.score_updated.connect(_on_score_updated)
 	score_manager.high_score_updated.connect(_on_high_score_updated)
 	score_manager.score_delta.connect(_on_score_delta)
+	# Ensure high score is loaded and HUD is updated after signal connections are made
+	# This handles the case where _ready() was called before connections
+	score_manager.load_high_score()
 
 	obstacle_manager = ObstacleManager.new()
 	add_child(obstacle_manager)
@@ -722,9 +725,9 @@ func _on_player_jumped_on_foe(foe: Node):
 		# Award 200 points for destroying a foe (200 * 100 = 20000 raw score)
 		score_manager.add_score(200 * 100, true)  # Show delta for bonus event
 
-		# Play "mhm" sound 50% of the time when foe is destroyed
+		# Play "mhm" sound 20% of the time when foe is destroyed
 		if audio_manager:
-			audio_manager.play_sound("mhm", 0.5)
+			audio_manager.play_sound("mhm", 0.2)
 
 func game_over():
 	# Prevent multiple game over calls
