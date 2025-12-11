@@ -573,10 +573,6 @@ func _process(delta: float) -> void:
 			$Hud.get_node("StartLabel").hide()
 			touch_start_detected = false  # Reset touch flag
 
-			# Play "alright" sound when game starts
-			if audio_manager:
-				audio_manager.play_sound("alright")
-
 # Signal handlers
 func _on_score_updated(_score: int):
 	$Hud.get_node("ScoreValue").text = str(score_manager.get_display_score())
