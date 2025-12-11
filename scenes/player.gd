@@ -20,6 +20,18 @@ var blink_count: int = 0
 var total_blinks: int = 0
 const BLINK_DURATION: float = 0.2  # Time for each blink (on/off cycle)
 
+# Mobile touch input state
+var touch_start_position: Vector2 = Vector2.ZERO
+var touch_start_time: float = 0.0
+var is_touching: bool = false
+var touch_index: int = -1
+const SWIPE_THRESHOLD: float = 100.0  # Minimum distance for swipe detection
+const TAP_MAX_DURATION: float = 0.2  # Maximum time for a tap (seconds)
+const TAP_MAX_DISTANCE: float = 50.0  # Maximum distance for a tap (pixels)
+var touch_jump_pressed: bool = false
+var touch_jump_just_pressed: bool = false
+var touch_slide_pressed: bool = false
+
 
 func _is_shotgun_active() -> bool:
 	# Check if shotgun power up is active
@@ -64,13 +76,61 @@ func _get_animation_name(base_name: String) -> String:
 			return shotgun_name
 	return base_name
 
+func _unhandled_input(event: InputEvent) -> void:
+	# Handle mobile touch input (only process if not handled by UI buttons)
+	# Using _unhandled_input ensures button presses don't trigger player actions
+	if event is InputEventScreenTouch:
+		var touch_event = event as InputEventScreenTouch
+		if touch_event.pressed:
+			# Touch started
+			if touch_index == -1:  # Only track first touch
+				touch_index = touch_event.index
+				touch_start_position = touch_event.position
+				touch_start_time = Time.get_ticks_msec() / 1000.0
+				is_touching = true
+		else:
+			# Touch ended
+			if touch_event.index == touch_index:
+				var touch_end_position = touch_event.position
+				var touch_duration = (Time.get_ticks_msec() / 1000.0) - touch_start_time
+				var touch_distance = touch_start_position.distance_to(touch_end_position)
+				var touch_delta = touch_end_position - touch_start_position
+				
+				# Detect swipe down
+				if touch_delta.y > SWIPE_THRESHOLD and abs(touch_delta.x) < abs(touch_delta.y):
+					# Swipe down detected
+					touch_slide_pressed = true
+				elif touch_duration < TAP_MAX_DURATION and touch_distance < TAP_MAX_DISTANCE:
+					# Tap detected
+					touch_jump_just_pressed = true
+					touch_jump_pressed = false
+				
+				# Reset touch state
+				is_touching = false
+				touch_index = -1
+				touch_start_position = Vector2.ZERO
+				touch_start_time = 0.0
+	
+	elif event is InputEventScreenDrag:
+		var drag_event = event as InputEventScreenDrag
+		if drag_event.index == touch_index:
+			# Track drag for swipe detection
+			var drag_delta = drag_event.position - touch_start_position
+			# If dragging down significantly, it's a swipe down
+			if drag_delta.y > SWIPE_THRESHOLD and abs(drag_delta.x) < abs(drag_delta.y):
+				# Swipe down detected during drag
+				touch_slide_pressed = true
+				is_touching = false
+				touch_index = -1
+
 func _physics_process(delta: float) -> void:
 	# Update collision shapes based on gokart power-up state
 	var gokart_active = _is_gokart_active()
 	
 	# Use glide gravity only if double jump has been used, input is held, and gokart is not active
 	# If input is released while gliding, return to normal gravity for better maneuverability
-	var is_holding_jump = Input.is_action_pressed("ui_accept")
+	# Check both keyboard and touch input for jump
+	var is_holding_jump = Input.is_action_pressed("ui_accept") or is_touching
 	var current_gravity = GLIDE_GRAVITY if (has_double_jumped and is_holding_jump and not gokart_active) else GRAVITY
 	velocity.y += current_gravity * delta
 
@@ -113,16 +173,25 @@ func _physics_process(delta: float) -> void:
 		if not get_parent().game_running:
 			$AnimatedSprite2D.play(_get_animation_name("idle"))
 		else:
-			if Input.is_action_pressed("ui_accept"):
+			# Check for jump input (keyboard or touch tap)
+			var jump_input = Input.is_action_pressed("ui_accept") or touch_jump_just_pressed
+			if jump_input:
 				velocity.y = JUMP_VELOCITY
 				# Start tracking peak when jumping
 				is_tracking_peak = true
 				jump_peak_y = global_position.y
-			elif Input.is_action_just_pressed("ui_down") and not is_sliding and not gokart_active:
+				# Reset touch jump flag after using it
+				if touch_jump_just_pressed:
+					touch_jump_just_pressed = false
+			# Check for slide input (keyboard or touch swipe down)
+			elif (Input.is_action_just_pressed("ui_down") or touch_slide_pressed) and not is_sliding and not gokart_active:
 				is_sliding = true
 				sliding_timer = 0.0
 				$AnimatedSprite2D.play(_get_animation_name("sliding"))
 				$RunCollisionShape.disabled = true
+				# Reset touch slide flag after using it
+				if touch_slide_pressed:
+					touch_slide_pressed = false
 			elif is_sliding and not gokart_active:
 				# Keep sliding animation playing and collision disabled
 				$AnimatedSprite2D.play(_get_animation_name("sliding"))
@@ -139,11 +208,16 @@ func _physics_process(delta: float) -> void:
 				is_tracking_peak = false
 
 		# Allow double jump only near the peak of the first jump (disabled when gokart is active)
+		# Check both keyboard and touch input for double jump
+		var double_jump_input = Input.is_action_just_pressed("ui_accept") or touch_jump_just_pressed
 		var distance_from_peak = abs(global_position.y - jump_peak_y)
-		if Input.is_action_just_pressed("ui_accept") and not has_double_jumped and not gokart_active and distance_from_peak <= DOUBLE_JUMP_PEAK_TOLERANCE:
+		if double_jump_input and not has_double_jumped and not gokart_active and distance_from_peak <= DOUBLE_JUMP_PEAK_TOLERANCE:
 			velocity.y = DOUBLE_JUMP_VELOCITY
 			has_double_jumped = true
 			is_tracking_peak = false
+			# Reset touch jump flag after using it
+			if touch_jump_just_pressed:
+				touch_jump_just_pressed = false
 
 		# Play gliding animation only if double jumped AND holding jump input
 		# If input is released while gliding, switch to jumping animation
@@ -153,6 +227,11 @@ func _physics_process(delta: float) -> void:
 			$AnimatedSprite2D.play(_get_animation_name("jumping"))
 
 	move_and_slide()
+	
+	# Reset touch input flags at end of frame if they weren't used
+	# This ensures they don't persist to the next frame
+	touch_jump_just_pressed = false
+	touch_slide_pressed = false
 	
 	# Handle blinking
 	if is_blinking:
