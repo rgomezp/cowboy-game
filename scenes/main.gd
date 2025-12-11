@@ -66,6 +66,9 @@ const MAX_SPEED : int = 15
 var screen_size : Vector2i
 var game_running : bool
 var ground_height : int
+var ground_width : int
+var ground_1 : StaticBody2D
+var ground_2 : StaticBody2D
 var distance : int = 0  # Track actual distance traveled, separate from score
 var game_over_in_progress : bool = false  # Track if game over is already triggered
 var explosion_in_progress : bool = false  # Track if TNT explosion is playing (stops movement)
@@ -89,7 +92,15 @@ var special_button_reaction_time: float = -1.0  # Time taken for correct answers
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	screen_size = get_window().size
-	ground_height = $Ground.get_node("Sprite2D").texture.get_height()
+
+	# Get both ground bodies (not just sprites)
+	ground_1 = $Ground.get_node("Ground1")
+	ground_2 = $Ground.get_node("Ground2")
+
+	# Get dimensions from texture
+	ground_width = ground_1.get_node("Sprite2D").texture.get_width()
+	ground_height = ground_1.get_node("Sprite2D").texture.get_height()
+
 	$GameOver.get_node("Button").pressed.connect(new_game)
 
 	# Initialize managers
@@ -100,7 +111,7 @@ func _ready() -> void:
 
 	# Initialize iOS audio session if on iOS
 	_initialize_ios_audio()
-	
+
 	# Setup music
 	setup_music()
 
@@ -130,7 +141,7 @@ func setup_managers():
 	obstacle_manager.obstacle_added.connect(_on_obstacle_added)
 
 	var obstacle_types: Array[PackedScene] = [rock_scene, agave_scene, tnt_scene]
-	var ground_sprite = $Ground.get_node("Sprite2D")
+	var ground_sprite = ground_1.get_node("Sprite2D")
 	obstacle_manager.initialize(obstacle_types, screen_size, ground_sprite)
 
 	butterfly_spawner = ButterflySpawner.new()
@@ -375,7 +386,10 @@ func new_game():
 	$Player.position = PLAYER_START_POS
 	$Player.velocity = Vector2i(0, 0)
 	$Camera2D.position = CAMERA_START_POS
+	# Position ground bodies (collision moves with them)
 	$Ground.position = Vector2i(0, 0)
+	ground_1.position.x = 0
+	ground_2.position.x = ground_width
 
 	# Reset HUD and game over scene
 	$Hud.get_node("StartLabel").show()
@@ -485,9 +499,16 @@ func _process(delta: float) -> void:
 			# Don't show delta for continuous movement score updates
 			score_manager.add_score(int(speed), false)
 
-		# Update ground position
-		if $Camera2D.position.x - $Ground.position.x > screen_size.x * 1.5:
-			$Ground.position.x += screen_size.x
+		# Update ground bodies - swap whichever one is off-screen to the front
+		var camera_left_edge = $Camera2D.position.x - float(screen_size.x) / 2.0
+
+		# If ground 1 is completely off-screen to the left, move it ahead of ground 2
+		if ground_1.position.x + ground_width < camera_left_edge:
+			ground_1.position.x = ground_2.position.x + ground_width
+
+		# If ground 2 is completely off-screen to the left, move it ahead of ground 1
+		if ground_2.position.x + ground_width < camera_left_edge:
+			ground_2.position.x = ground_1.position.x + ground_width
 
 		# Cleanup off-screen obstacles
 		obstacle_manager.cleanup_off_screen_obstacles($Camera2D.position.x)
@@ -514,12 +535,12 @@ func _process(delta: float) -> void:
 	else:
 		# Check for keyboard or touch input to start game
 		var start_input = Input.is_action_pressed("ui_accept") or touch_start_detected
-		
+
 		if start_input:
 			game_running = true
 			$Hud.get_node("StartLabel").hide()
 			touch_start_detected = false  # Reset touch flag
-			
+
 			# Play "alright" sound when game starts
 			if audio_manager:
 				audio_manager.play_sound("alright")
