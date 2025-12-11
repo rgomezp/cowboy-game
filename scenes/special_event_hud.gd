@@ -87,7 +87,7 @@ func show_outcome(outcome_type: String, time_seconds: float = -1.0):
 	match outcome_type:
 		"miss":
 			event_label.text = "Too Slow"
-			event_label.modulate = Color(0.3, 0.3, 0.3)  # Dark grey
+			event_label.modulate = Color.WHITE  # White fill
 			label_settings.outline_size = 8
 			label_settings.outline_color = Color(0, 0, 0, 1)  # Black outline
 		"nice":
