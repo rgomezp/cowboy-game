@@ -130,7 +130,13 @@ func _physics_process(delta: float) -> void:
 	# Use glide gravity only if double jump has been used, input is held, and gokart is not active
 	# If input is released while gliding, return to normal gravity for better maneuverability
 	# Check both keyboard and touch input for jump
-	var is_holding_jump = Input.is_action_pressed("ui_accept") or is_touching
+	# For touch: if holding longer than tap duration, it counts as a hold for gliding
+	# This allows tap-and-hold gesture: tap for double jump, then hold to glide
+	var touch_hold_duration = 0.0
+	if is_touching and touch_start_time > 0.0:
+		touch_hold_duration = (Time.get_ticks_msec() / 1000.0) - touch_start_time
+	var is_touching_and_holding = is_touching and touch_hold_duration > TAP_MAX_DURATION
+	var is_holding_jump = Input.is_action_pressed("ui_accept") or is_touching_and_holding
 	var current_gravity = GLIDE_GRAVITY if (has_double_jumped and is_holding_jump and not gokart_active) else GRAVITY
 	velocity.y += current_gravity * delta
 
