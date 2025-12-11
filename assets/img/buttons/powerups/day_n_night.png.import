@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ci3088p1ems7k"
-path="res://.godot/imported/plx-2.png-4ba1409d90d8a425045a2cce49ad9b02.ctex"
+uid="uid://dej1jmayl5u7j"
+path="res://.godot/imported/day_n_night.png-c2c8066bed2b6b6a0c7e37c46dfaa63f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/img/background/plx-2.png"
-dest_files=["res://.godot/imported/plx-2.png-4ba1409d90d8a425045a2cce49ad9b02.ctex"]
+source_file="res://assets/img/buttons/powerups/day_n_night.png"
+dest_files=["res://.godot/imported/day_n_night.png-c2c8066bed2b6b6a0c7e37c46dfaa63f.ctex"]
 
 [params]
 

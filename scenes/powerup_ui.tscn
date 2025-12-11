@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://bxlt3s74ivsqp"]
+[gd_scene load_steps=6 format=3 uid="uid://bxlt3s74ivsqp"]
 
 [ext_resource type="Script" uid="uid://cj7vh3tho8vg0" path="res://scenes/powerup_ui.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://tmby7edjc3bh" path="res://assets/img/buttons/powerups/gokart_powerup.png" id="2_gokart"]
 [ext_resource type="Texture2D" uid="uid://7qd1ie0qbadw" path="res://assets/img/buttons/powerups/shotgun_powerup.png" id="3_shotgun"]
 [ext_resource type="Texture2D" uid="uid://bsari4bpoqcst" path="res://assets/img/buttons/powerups/heart_powerup.png" id="4_heart"]
+[ext_resource type="Texture2D" path="res://assets/img/buttons/powerups/day_n_night.png" id="5_day_night"]
 
 [node name="PowerUpUI" type="CanvasLayer"]
 script = ExtResource("1_script")
@@ -35,6 +36,16 @@ offset_bottom = 1855.0
 texture_normal = ExtResource("4_heart")
 stretch_mode = 5
 
+[node name="DayNightButton" type="TextureButton" parent="."]
+texture_filter = 1
+offset_left = 809.0
+offset_top = 1655.0
+offset_right = 1009.0
+offset_bottom = 1855.0
+texture_normal = ExtResource("5_day_night")
+stretch_mode = 5
+
 [connection signal="pressed" from="GokartButton" to="." method="_on_gokart_button_pressed"]
 [connection signal="pressed" from="ShotgunButton" to="." method="_on_shotgun_button_pressed"]
 [connection signal="pressed" from="HeartButton" to="." method="_on_heart_button_pressed"]
+[connection signal="pressed" from="DayNightButton" to="." method="_on_day_night_button_pressed"]

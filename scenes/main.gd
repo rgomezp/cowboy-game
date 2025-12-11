@@ -40,6 +40,7 @@ var AudioSetupManager = preload("res://scenes/AudioSetupManager.gd")
 var DifficultyManager = preload("res://scenes/DifficultyManager.gd")
 var SpawningController = preload("res://scenes/SpawningController.gd")
 var TNTExplosionHandler = preload("res://scenes/TNTExplosionHandler.gd")
+var TimeOfDayController = preload("res://scenes/TimeOfDayController.gd")
 # Preload PowerUpBase first to ensure class_name is registered
 # This ensures the class is available when other powerup scripts extend it
 @warning_ignore("unused_private_class_variable")
@@ -47,6 +48,7 @@ var _powerup_base = preload("res://scenes/powerups/PowerUpBase.gd")
 var GokartPowerUp = preload("res://scenes/powerups/GokartPowerUp.gd")
 var ShotgunPowerUp = preload("res://scenes/powerups/ShotgunPowerUp.gd")
 var HeartPowerUp = preload("res://scenes/powerups/HeartPowerUp.gd")
+var DayNightPowerUp = preload("res://scenes/powerups/DayNightPowerUp.gd")
 
 # Manager instances
 var score_manager: Node
@@ -65,6 +67,7 @@ var audio_setup_manager: Node
 var difficulty_manager: Node
 var spawning_controller: Node
 var tnt_explosion_handler: Node
+var time_of_day_controller: Node
 
 const PLAYER_START_POS := Vector2i(19, 166)
 const CAMERA_START_POS := Vector2i(540, 960)
@@ -186,13 +189,20 @@ func setup_managers():
 	add_child(lives_manager)
 	lives_manager.life_lost.connect(_on_life_lost)
 
+	# Initialize time of day controller
+	time_of_day_controller = TimeOfDayController.new()
+	time_of_day_controller.name = "TimeOfDayController"
+	add_child(time_of_day_controller)
+	time_of_day_controller.initialize($ParallaxBackground, $Ground)
+
 	# Initialize powerup manager first (needed by special event manager)
 	powerup_manager = PowerUpManager.new()
 	add_child(powerup_manager)
 	var gokart_powerup = GokartPowerUp.new()
 	var shotgun_powerup = ShotgunPowerUp.new()
 	var heart_powerup = HeartPowerUp.new()
-	var powerups: Array[PowerUpBase] = [gokart_powerup, shotgun_powerup, heart_powerup]
+	var day_night_powerup = DayNightPowerUp.new()
+	var powerups: Array[PowerUpBase] = [gokart_powerup, shotgun_powerup, heart_powerup, day_night_powerup]
 	powerup_manager.initialize(powerups, $PowerUpUI, lives_manager)
 	powerup_manager.powerup_activated.connect(_on_powerup_activated)
 	powerup_manager.powerup_deactivated.connect(_on_powerup_deactivated)
@@ -267,6 +277,8 @@ func new_game():
 		difficulty_manager.reset()
 	if tnt_explosion_handler:
 		tnt_explosion_handler.reset()
+	if time_of_day_controller:
+		time_of_day_controller.reset()
 	if $Hud:
 		$Hud.reset()
 
