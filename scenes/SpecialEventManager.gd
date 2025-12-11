@@ -54,10 +54,10 @@ func reset():
 
 func schedule_next_event():
 	# Schedule next event in 10-30 seconds (10-30 seconds)
-	next_event_interval = randf_range(0.0, 3.0)
+	next_event_interval = randf_range(10.0, 30.0)
 	time_since_last_event = 0.0
 
-func update(delta: float, current_speed: float, camera_x: float) -> void:
+func update(delta: float, current_speed: float, camera_x: float) -> void: 
 	if is_event_active:
 		handle_active_event(delta, current_speed, camera_x)
 	else:
