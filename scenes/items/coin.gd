@@ -9,7 +9,7 @@ func _ready() -> void:
 	monitorable = true
 	# Connect collision signal directly
 	body_entered.connect(_on_body_entered)
-	
+
 	# Load coin sound
 	var coin_stream = load("res://assets/audio/effects/coin.mp3")
 	if coin_stream:
@@ -17,7 +17,6 @@ func _ready() -> void:
 		add_child(coin_sound)
 		coin_sound.stream = coin_stream
 		coin_sound.volume_db = -10.5  # 70% volume reduction (30% of original volume)
-		print("[Coin] Coin sound loaded")
 	else:
 		print("[Coin] WARNING: Could not load coin.mp3")
 

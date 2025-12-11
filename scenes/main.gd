@@ -844,7 +844,7 @@ func _on_special_button_pressed(is_good: bool):
 	# Process button presses at any time after buttons are shown
 	# No longer restrict to only after sprite enters view
 	var buttons_ui = $SpecialEventButtons
-	
+
 	# Get the timer value (time since sprite entered view, or 0.0 if not yet entered)
 	var reaction_time = buttons_ui.get_timer_value()
 	print("[Main] _on_special_button_pressed: reaction_time=", reaction_time, ", sprite_entered_view=", buttons_ui.has_sprite_entered_view())
@@ -881,10 +881,10 @@ func _on_special_button_pressed(is_good: bool):
 	# Mark that a button was pressed - event will end when special leaves screen
 	special_event_manager.mark_button_pressed()
 
-func _on_special_buttons_hidden(was_pressed: bool, too_early: bool):
+func _on_special_buttons_hidden(was_pressed: bool, _too_early: bool):
 	# Show outcome message when buttons are hidden
-	# Note: too_early is always false now since we removed the "too early" restriction
-	
+	# Note: _too_early is always false now since we removed the "too early" restriction
+
 	if was_pressed:
 		# Button was pressed - show result based on whether it was correct or wrong
 		if special_button_result == "correct":
