@@ -114,6 +114,10 @@ func _ready() -> void:
 
 	# Initialize iOS audio session if on iOS
 	_initialize_ios_audio()
+	
+	# Initialize Input singleton early on iOS to prevent motion handler crash
+	# This ensures Input is fully initialized before motion events can occur
+	_initialize_ios_input()
 
 	# Setup music
 	setup_music()
@@ -227,6 +231,21 @@ func _initialize_ios_audio():
 		if master_bus >= 0:
 			AudioServer.set_bus_volume_db(master_bus, 0.0)
 		print("[Main] iOS audio session initialized")
+
+func _initialize_ios_input():
+	# Workaround for iOS motion handler crash on older devices (iPhone 7, etc.)
+	# The crash occurs when Input::set_gravity() is called from motion handler
+	# before the Input singleton's mutex is fully initialized.
+	# By accessing Input methods early, we force initialization of the Input singleton
+	# before any motion events can occur.
+	if OS.get_name() == "iOS":
+		# Force Input singleton initialization by accessing it
+		# This ensures the internal mutex is initialized before motion handlers run
+		var _gravity = Input.get_gravity()
+		var _accel = Input.get_accelerometer()
+		var _gyro = Input.get_gyroscope()
+		# Access these even if we don't use them - just to force initialization
+		print("[Main] iOS Input singleton initialized (motion handler workaround)")
 
 func setup_music():
 	# Load the music file
