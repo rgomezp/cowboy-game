@@ -36,6 +36,10 @@ var touch_slide_pressed: bool = false
 var jump_buffer_time: float = 0.0
 const JUMP_BUFFER_DURATION: float = 0.15  # 150ms window to buffer jump input
 
+# Slide buffering - remembers slide input slightly before landing
+var slide_buffer_time: float = 0.0
+const SLIDE_BUFFER_DURATION: float = 0.15  # 150ms window to buffer slide input
+
 
 func _is_shotgun_active() -> bool:
 	# Check if shotgun power up is active
@@ -137,6 +141,15 @@ func _physics_process(delta: float) -> void:
 	if jump_input_this_frame:
 		jump_buffer_time = JUMP_BUFFER_DURATION
 
+	# Update slide buffer timer
+	if slide_buffer_time > 0:
+		slide_buffer_time -= delta
+
+	# Check for slide input and buffer it
+	var slide_input_this_frame = Input.is_action_just_pressed("ui_down") or touch_slide_pressed
+	if slide_input_this_frame:
+		slide_buffer_time = SLIDE_BUFFER_DURATION
+
 	# Use glide gravity only if double jump has been used, input is held, and gokart is not active
 	# If input is released while gliding, return to normal gravity for better maneuverability
 	# Check both keyboard and touch input for jump
@@ -196,15 +209,13 @@ func _physics_process(delta: float) -> void:
 				# Start tracking peak when jumping
 				is_tracking_peak = true
 				jump_peak_y = global_position.y
-			# Check for slide input (keyboard or touch swipe down)
-			elif (Input.is_action_just_pressed("ui_down") or touch_slide_pressed) and not is_sliding and not gokart_active:
+			# Check for buffered slide input (includes current frame input)
+			elif slide_buffer_time > 0 and not is_sliding and not gokart_active:
 				is_sliding = true
 				sliding_timer = 0.0
+				slide_buffer_time = 0  # Clear the buffer
 				$AnimatedSprite2D.play(_get_animation_name("sliding"))
 				$RunCollisionShape.disabled = true
-				# Reset touch slide flag after using it
-				if touch_slide_pressed:
-					touch_slide_pressed = false
 			elif is_sliding and not gokart_active:
 				# Keep sliding animation playing and collision disabled
 				$AnimatedSprite2D.play(_get_animation_name("sliding"))
