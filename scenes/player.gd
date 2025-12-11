@@ -32,6 +32,10 @@ var touch_jump_pressed: bool = false
 var touch_jump_just_pressed: bool = false
 var touch_slide_pressed: bool = false
 
+# Jump buffering - remembers jump input slightly before landing
+var jump_buffer_time: float = 0.0
+const JUMP_BUFFER_DURATION: float = 0.15  # 150ms window to buffer jump input
+
 
 func _is_shotgun_active() -> bool:
 	# Check if shotgun power up is active
@@ -82,35 +86,32 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		var touch_event = event as InputEventScreenTouch
 		if touch_event.pressed:
-			# Touch started
+			# Touch started - trigger jump immediately on touch down
+			# This allows tap-and-hold: tap triggers jump, keep holding to glide
 			if touch_index == -1:  # Only track first touch
 				touch_index = touch_event.index
 				touch_start_position = touch_event.position
 				touch_start_time = Time.get_ticks_msec() / 1000.0
 				is_touching = true
+				# Trigger jump immediately on touch down (not on release)
+				touch_jump_just_pressed = true
 		else:
 			# Touch ended
 			if touch_event.index == touch_index:
 				var touch_end_position = touch_event.position
-				var touch_duration = (Time.get_ticks_msec() / 1000.0) - touch_start_time
-				var touch_distance = touch_start_position.distance_to(touch_end_position)
 				var touch_delta = touch_end_position - touch_start_position
-				
-				# Detect swipe down
+
+				# Detect swipe down (only on release, jump is handled on touch start)
 				if touch_delta.y > SWIPE_THRESHOLD and abs(touch_delta.x) < abs(touch_delta.y):
 					# Swipe down detected
 					touch_slide_pressed = true
-				elif touch_duration < TAP_MAX_DURATION and touch_distance < TAP_MAX_DISTANCE:
-					# Tap detected
-					touch_jump_just_pressed = true
-					touch_jump_pressed = false
-				
+
 				# Reset touch state
 				is_touching = false
 				touch_index = -1
 				touch_start_position = Vector2.ZERO
 				touch_start_time = 0.0
-	
+
 	elif event is InputEventScreenDrag:
 		var drag_event = event as InputEventScreenDrag
 		if drag_event.index == touch_index:
@@ -126,7 +127,16 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	# Update collision shapes based on gokart power-up state
 	var gokart_active = _is_gokart_active()
-	
+
+	# Update jump buffer timer
+	if jump_buffer_time > 0:
+		jump_buffer_time -= delta
+
+	# Check for jump input and buffer it
+	var jump_input_this_frame = Input.is_action_just_pressed("ui_accept") or touch_jump_just_pressed
+	if jump_input_this_frame:
+		jump_buffer_time = JUMP_BUFFER_DURATION
+
 	# Use glide gravity only if double jump has been used, input is held, and gokart is not active
 	# If input is released while gliding, return to normal gravity for better maneuverability
 	# Check both keyboard and touch input for jump
@@ -179,16 +189,13 @@ func _physics_process(delta: float) -> void:
 		if not get_parent().game_running:
 			$AnimatedSprite2D.play(_get_animation_name("idle"))
 		else:
-			# Check for jump input (keyboard or touch tap)
-			var jump_input = Input.is_action_pressed("ui_accept") or touch_jump_just_pressed
-			if jump_input:
+			# Check for buffered jump input (includes current frame input)
+			if jump_buffer_time > 0:
 				velocity.y = JUMP_VELOCITY
+				jump_buffer_time = 0  # Clear the buffer
 				# Start tracking peak when jumping
 				is_tracking_peak = true
 				jump_peak_y = global_position.y
-				# Reset touch jump flag after using it
-				if touch_jump_just_pressed:
-					touch_jump_just_pressed = false
 			# Check for slide input (keyboard or touch swipe down)
 			elif (Input.is_action_just_pressed("ui_down") or touch_slide_pressed) and not is_sliding and not gokart_active:
 				is_sliding = true
@@ -221,9 +228,7 @@ func _physics_process(delta: float) -> void:
 			velocity.y = DOUBLE_JUMP_VELOCITY
 			has_double_jumped = true
 			is_tracking_peak = false
-			# Reset touch jump flag after using it
-			if touch_jump_just_pressed:
-				touch_jump_just_pressed = false
+			jump_buffer_time = 0  # Clear any buffer when double jumping
 
 		# Play gliding animation only if double jumped AND holding jump input
 		# If input is released while gliding, switch to jumping animation
@@ -233,12 +238,12 @@ func _physics_process(delta: float) -> void:
 			$AnimatedSprite2D.play(_get_animation_name("jumping"))
 
 	move_and_slide()
-	
+
 	# Reset touch input flags at end of frame if they weren't used
 	# This ensures they don't persist to the next frame
 	touch_jump_just_pressed = false
 	touch_slide_pressed = false
-	
+
 	# Handle blinking
 	if is_blinking:
 		blink_timer += delta
@@ -247,7 +252,7 @@ func _physics_process(delta: float) -> void:
 			blink_count += 1
 			# Toggle visibility
 			$AnimatedSprite2D.visible = (blink_count % 2 == 0)
-			
+
 			# Check if we've completed all blinks (3 blinks = 6 toggles)
 			if blink_count >= total_blinks * 2:
 				stop_blinking()
