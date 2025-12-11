@@ -91,7 +91,10 @@ var special_button_reaction_time: float = -1.0  # Time taken for correct answers
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	screen_size = get_window().size
+	# Use viewport visible rect size instead of window size
+	# This accounts for stretch mode "viewport" with aspect "expand"
+	# which can make the visible area larger than the base viewport on wider devices
+	screen_size = Vector2i(get_viewport().get_visible_rect().size)
 
 	# Get both ground bodies (not just sprites)
 	ground_1 = $Ground.get_node("Ground1")

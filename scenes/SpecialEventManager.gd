@@ -181,8 +181,24 @@ func spawn_special(current_speed: float, camera_x: float):
 	var sprite_half_height = (sprite_height * sprite_scale.y) / 2.0
 	var spawn_y = GROUND_LEVEL_Y - sprite_half_height
 
-	# Position at right edge of screen (ahead of camera)
-	var spawn_x = camera_x + screen_size.x + GameConstants.SPAWN_OFFSET
+	# Calculate sprite width for proper off-screen positioning
+	var sprite_width = 0.0
+	if sprite and sprite is Sprite2D and sprite.texture:
+		sprite_width = sprite.texture.get_width() * sprite_scale.x
+	elif sprite and sprite is AnimatedSprite2D and sprite.sprite_frames:
+		var first_frame = sprite.sprite_frames.get_frame_texture("default", 0)
+		if first_frame:
+			sprite_width = first_frame.get_width() * sprite_scale.x
+
+	# If we still don't have a valid width, use a default
+	if sprite_width == 0.0:
+		sprite_width = 100.0  # Default fallback width
+
+	# Sprite origin is at center, so add half width to ensure left edge is off-screen
+	var sprite_half_width = sprite_width / 2.0
+
+	# Position so the LEFT edge of the sprite is past the right edge of the screen
+	var spawn_x = camera_x + screen_size.x + sprite_half_width + GameConstants.SPAWN_OFFSET
 
 	current_special.position = Vector2(spawn_x, spawn_y)
 
