@@ -79,9 +79,10 @@ var touch_start_detected : bool = false  # Track if touch was detected to start 
 
 # Difficulty system
 var current_difficulty_level : int = 1
-const LEVEL_1_THRESHOLD : int = 0      # Start at level 1
-const LEVEL_2_THRESHOLD : int = 50000  # Switch to level 2 at 50k distance
-const LEVEL_3_THRESHOLD : int = 100000 # Switch to level 3 at 100k distance
+const LEVEL_1_THRESHOLD : int = 0       # Start at level 1
+const LEVEL_2_THRESHOLD : int = 37500  # Switch to level 2 at 37.5k distance
+const LEVEL_3_THRESHOLD : int = 75000  # Switch to level 3 at 75k distance
+const LEVEL_4_THRESHOLD : int = 112500 # Switch to level 4 at 112.5k distance
 
 # Score delta display variables
 var score_delta_timer: float = 0.0
@@ -436,7 +437,9 @@ func new_game():
 
 func update_difficulty_level():
 	# Determine difficulty level based on distance
-	if distance >= LEVEL_3_THRESHOLD:
+	if distance >= LEVEL_4_THRESHOLD:
+		current_difficulty_level = 4
+	elif distance >= LEVEL_3_THRESHOLD:
 		current_difficulty_level = 3
 	elif distance >= LEVEL_2_THRESHOLD:
 		current_difficulty_level = 2
@@ -470,13 +473,15 @@ func _process(delta: float) -> void:
 		update_difficulty_level()
 
 		# Calculate speed based on difficulty level
-		# Level 1: speed 10, Level 2: speed 15, Level 3: speed 20
+		# Level 1: speed 10, Level 2: speed 12, Level 3: speed 14, Level 4: speed 16
 		if current_difficulty_level == 1:
-			speed = 12.5
+			speed = 10.0
 		elif current_difficulty_level == 2:
-			speed = 15.0
-		else:  # Level 3
-			speed = 17.5
+			speed = 12.0
+		elif current_difficulty_level == 3:
+			speed = 14.0
+		else:  # Level 4
+			speed = 16.0
 
 		# Apply powerup speed modifier (e.g., from gokart)
 		speed *= powerup_manager.get_speed_modifier()
