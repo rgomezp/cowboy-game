@@ -30,17 +30,19 @@ func reset_for_new_event():
 
 func _process(delta: float):
 	if buttons_visible:
+		# Check if button was pressed - hide immediately regardless of sprite view status
+		if force_hide:
+			# Button was pressed - allow hiding immediately
+			hide_buttons()
+			return
+		
 		# If sprite has entered view, start counting down
 		if sprite_entered_view:
 			# Only increment timer if delta is valid (prevents issues during powerup speed changes)
 			if delta > 0.0:
 				timer += delta
-			# Only hide buttons after 1 full second has passed since sprite entered view
-			# OR if force_hide is set (button was pressed)
-			if force_hide:
-				# Button was pressed - allow hiding
-				hide_buttons()
-			elif timer >= TIMEOUT_AFTER_VIEW:
+			# Hide buttons after 1 full second has passed since sprite entered view
+			if timer >= TIMEOUT_AFTER_VIEW:
 				# 1 second has passed - safe to hide now
 				hide_buttons()
 
