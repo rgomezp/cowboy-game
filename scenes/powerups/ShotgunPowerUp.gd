@@ -331,9 +331,9 @@ func _destroy_foe(target: Node) -> void:
 		gunshot_sound.play()
 		print("[ShotgunPowerUp] Playing gunshot sound (foe destroyed)")
 	
-	# Play "mhm" sound 50% of the time when foe is destroyed
+	# Play "mhm" sound 20% of the time when foe is destroyed
 	if main_node.audio_manager and main_node.audio_manager.has_method("play_sound"):
-		main_node.audio_manager.play_sound("mhm", 0.5)
+		main_node.audio_manager.play_sound("mhm", 0.2)
 
 func _destroy_butterfly(target: Node) -> void:
 	# Destroy butterfly - let the destroy() method handle the animation and cleanup

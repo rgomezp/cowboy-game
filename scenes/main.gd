@@ -79,10 +79,17 @@ var touch_start_detected : bool = false  # Track if touch was detected to start 
 
 # Difficulty system
 var current_difficulty_level : int = 1
+var previous_difficulty_level : int = 1  # Track previous level to detect changes
 const LEVEL_1_THRESHOLD : int = 0       # Start at level 1
 const LEVEL_2_THRESHOLD : int = 37500  # Switch to level 2 at 37.5k distance
 const LEVEL_3_THRESHOLD : int = 75000  # Switch to level 3 at 75k distance
 const LEVEL_4_THRESHOLD : int = 112500 # Switch to level 4 at 112.5k distance
+
+# Speed transition system
+var target_speed : float = 10.0  # Target speed for current difficulty level
+var transition_start_speed : float = 10.0  # Speed when transition started
+var speed_transition_timer : float = 0.0  # Timer for speed transition (0-5 seconds)
+const SPEED_TRANSITION_DURATION : float = 5.0  # 5 seconds to reach new speed
 
 # Score delta display variables
 var score_delta_timer: float = 0.0
@@ -117,7 +124,7 @@ func _ready() -> void:
 
 	# Initialize iOS audio session if on iOS
 	_initialize_ios_audio()
-	
+
 	# Initialize Input singleton early on iOS to prevent motion handler crash
 	# This ensures Input is fully initialized before motion events can occur
 	_initialize_ios_input()
@@ -409,6 +416,11 @@ func new_game():
 	get_tree().paused = false
 	distance = 0  # Reset distance
 	current_difficulty_level = 1  # Reset to level 1
+	previous_difficulty_level = 1  # Reset previous level
+	target_speed = 10.0  # Reset to level 1 speed
+	transition_start_speed = 10.0  # Reset transition start speed
+	speed_transition_timer = SPEED_TRANSITION_DURATION  # Set to complete so speed is immediately at target
+	speed = 10.0  # Set initial speed
 
 	# Reset the nodes
 	$Player.position = PLAYER_START_POS
@@ -437,14 +449,40 @@ func new_game():
 
 func update_difficulty_level():
 	# Determine difficulty level based on distance
+	var new_level = 1
 	if distance >= LEVEL_4_THRESHOLD:
-		current_difficulty_level = 4
+		new_level = 4
 	elif distance >= LEVEL_3_THRESHOLD:
-		current_difficulty_level = 3
+		new_level = 3
 	elif distance >= LEVEL_2_THRESHOLD:
-		current_difficulty_level = 2
+		new_level = 2
 	else:
-		current_difficulty_level = 1
+		new_level = 1
+
+	# Calculate target speed for the current/new level
+	var new_target_speed = 10.0
+	if new_level == 1:
+		new_target_speed = 10.0
+	elif new_level == 2:
+		new_target_speed = 12.0
+	elif new_level == 3:
+		new_target_speed = 14.0
+	else:  # Level 4
+		new_target_speed = 16.0
+
+	# Check if level changed
+	if new_level != current_difficulty_level:
+		# Level changed - start speed transition
+		previous_difficulty_level = current_difficulty_level
+		current_difficulty_level = new_level
+		transition_start_speed = speed  # Start transition from current speed
+		speed_transition_timer = 0.0  # Reset timer
+		target_speed = new_target_speed
+
+		print("[Main] Difficulty level changed to ", current_difficulty_level, ", transitioning speed from ", transition_start_speed, " to ", target_speed)
+	else:
+		# Level didn't change, but ensure target_speed is set (for initial case)
+		target_speed = new_target_speed
 
 func update_hud_difficulty_level():
 	# Update HUD with current difficulty level for debugging
@@ -472,16 +510,16 @@ func _process(delta: float) -> void:
 		# Update difficulty level based on distance
 		update_difficulty_level()
 
-		# Calculate speed based on difficulty level
-		# Level 1: speed 10, Level 2: speed 12, Level 3: speed 14, Level 4: speed 16
-		if current_difficulty_level == 1:
-			speed = 10.0
-		elif current_difficulty_level == 2:
-			speed = 12.0
-		elif current_difficulty_level == 3:
-			speed = 14.0
-		else:  # Level 4
-			speed = 16.0
+		# Calculate speed with gradual transition
+		# If we're in a transition, interpolate between start and target speed
+		if speed_transition_timer < SPEED_TRANSITION_DURATION:
+			speed_transition_timer += delta
+			var progress = min(speed_transition_timer / SPEED_TRANSITION_DURATION, 1.0)  # Clamp to 0-1
+			# Linear interpolation from start speed to target speed
+			speed = lerpf(transition_start_speed, target_speed, progress)
+		else:
+			# Transition complete, use target speed directly
+			speed = target_speed
 
 		# Apply powerup speed modifier (e.g., from gokart)
 		speed *= powerup_manager.get_speed_modifier()
