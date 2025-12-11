@@ -70,6 +70,8 @@ var distance : int = 0  # Track actual distance traveled, separate from score
 var game_over_in_progress : bool = false  # Track if game over is already triggered
 var explosion_in_progress : bool = false  # Track if TNT explosion is playing (stops movement)
 var player_immune : bool = false  # Track if player is in immunity period
+var audio_initialized : bool = false  # Track if audio has been initialized (iOS requires user interaction)
+var touch_start_detected : bool = false  # Track if touch was detected to start game
 
 # Difficulty system
 var current_difficulty_level : int = 1
@@ -104,6 +106,14 @@ func _ready() -> void:
 	setup_sound_effects()
 
 	new_game()
+
+func _input(event: InputEvent) -> void:
+	# Detect touch input to start game (iOS/mobile support)
+	if not game_running and event is InputEventScreenTouch:
+		var touch_event = event as InputEventScreenTouch
+		if touch_event.pressed:
+			# Touch detected - mark for game start
+			touch_start_detected = true
 
 func setup_managers():
 	# Create and add manager nodes
@@ -202,14 +212,15 @@ func setup_music():
 			music_stream.loop = true
 		elif music_stream is AudioStreamOggVorbis:
 			music_stream.loop = true
-		# Start playing
-		$MusicPlayer.play()
+		# Don't start playing automatically - iOS requires user interaction first
+		# Music will start when user taps to start the game
 
 func reset_music():
 	# Stop the music and restart from the beginning
-	if $MusicPlayer.playing:
-		$MusicPlayer.stop()
-	$MusicPlayer.play()
+	if $MusicPlayer and $MusicPlayer.stream:
+		if $MusicPlayer.playing:
+			$MusicPlayer.stop()
+		$MusicPlayer.play()
 
 func setup_sound_effects():
 	# Load sound effect audio streams
@@ -316,6 +327,19 @@ func setup_sound_effects():
 	audio_manager.initialize(audio_players_dict)
 	print("[Main] AudioManager initialized (Connor voice lines only)")
 
+func initialize_audio_on_user_interaction():
+	# iOS requires audio to start after user interaction
+	# This is called when user first taps to start the game
+	print("[Main] Initializing audio on user interaction (iOS requirement)")
+	
+	# Start music playback (first user interaction)
+	if $MusicPlayer and $MusicPlayer.stream:
+		$MusicPlayer.play()
+		print("[Main] Music started after user interaction")
+	
+	# Audio players are already configured, they just need to be played
+	# The audio manager will handle playing sounds when needed
+
 func new_game():
 	# Reset game over and explosion flags
 	game_over_in_progress = false
@@ -362,12 +386,12 @@ func new_game():
 	delta_label.hide()
 	score_delta_timer = 0.0
 
-	# Reset music to play from the beginning
-	reset_music()
-
-	# Play "alright" when game starts/restarts
-	if audio_manager:
-		audio_manager.play_sound("alright")
+	# Reset music to play from the beginning (only if audio already initialized)
+	if audio_initialized:
+		reset_music()
+		# Play "alright" when game starts/restarts
+		if audio_manager:
+			audio_manager.play_sound("alright")
 
 func update_difficulty_level():
 	# Determine difficulty level based on distance
@@ -488,9 +512,22 @@ func _process(delta: float) -> void:
 		# Update HUD with current difficulty level
 		update_hud_difficulty_level()
 	else:
-		if Input.is_action_pressed("ui_accept"):
+		# Check for keyboard or touch input to start game
+		var start_input = Input.is_action_pressed("ui_accept") or touch_start_detected
+		
+		if start_input:
+			# Initialize audio on first user interaction (iOS requirement)
+			if not audio_initialized:
+				initialize_audio_on_user_interaction()
+				audio_initialized = true
+			
 			game_running = true
 			$Hud.get_node("StartLabel").hide()
+			touch_start_detected = false  # Reset touch flag
+			
+			# Play "alright" sound when game starts
+			if audio_manager:
+				audio_manager.play_sound("alright")
 
 # Signal handlers
 func _on_score_updated(_score: int):
