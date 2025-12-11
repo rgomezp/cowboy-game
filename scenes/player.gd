@@ -31,6 +31,8 @@ const TAP_MAX_DISTANCE: float = 50.0  # Maximum distance for a tap (pixels)
 var touch_jump_pressed: bool = false
 var touch_jump_just_pressed: bool = false
 var touch_slide_pressed: bool = false
+var touch_pending_jump: bool = false  # Jump pending until we confirm it's not a swipe
+const TOUCH_JUMP_DELAY: float = 0.05  # 50ms delay to detect swipes before jumping
 
 # Jump buffering - remembers jump input slightly before landing
 var jump_buffer_time: float = 0.0
@@ -90,31 +92,39 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		var touch_event = event as InputEventScreenTouch
 		if touch_event.pressed:
-			# Touch started - trigger jump immediately on touch down
+			# Touch started - set pending jump flag (will trigger after short delay if not a swipe)
 			# This allows tap-and-hold: tap triggers jump, keep holding to glide
 			if touch_index == -1:  # Only track first touch
 				touch_index = touch_event.index
 				touch_start_position = touch_event.position
 				touch_start_time = Time.get_ticks_msec() / 1000.0
 				is_touching = true
-				# Trigger jump immediately on touch down (not on release)
-				touch_jump_just_pressed = true
+				# Set pending jump - will trigger after delay if not cancelled by swipe
+				touch_pending_jump = true
 		else:
 			# Touch ended
 			if touch_event.index == touch_index:
 				var touch_end_position = touch_event.position
 				var touch_delta = touch_end_position - touch_start_position
+				var touch_duration = (Time.get_ticks_msec() / 1000.0) - touch_start_time
+				var touch_distance = touch_start_position.distance_to(touch_end_position)
 
-				# Detect swipe down (only on release, jump is handled on touch start)
+				# Detect swipe down
 				if touch_delta.y > SWIPE_THRESHOLD and abs(touch_delta.x) < abs(touch_delta.y):
-					# Swipe down detected
+					# Swipe down detected - cancel pending jump
+					touch_pending_jump = false
 					touch_slide_pressed = true
+				elif touch_pending_jump and touch_duration < TAP_MAX_DURATION and touch_distance < TAP_MAX_DISTANCE:
+					# Quick tap detected - trigger jump now
+					touch_jump_just_pressed = true
+					touch_pending_jump = false
 
 				# Reset touch state
 				is_touching = false
 				touch_index = -1
 				touch_start_position = Vector2.ZERO
 				touch_start_time = 0.0
+				touch_pending_jump = false
 
 	elif event is InputEventScreenDrag:
 		var drag_event = event as InputEventScreenDrag
@@ -123,7 +133,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			var drag_delta = drag_event.position - touch_start_position
 			# If dragging down significantly, it's a swipe down
 			if drag_delta.y > SWIPE_THRESHOLD and abs(drag_delta.x) < abs(drag_delta.y):
-				# Swipe down detected during drag
+				# Swipe down detected during drag - cancel pending jump
+				touch_pending_jump = false
 				touch_slide_pressed = true
 				is_touching = false
 				touch_index = -1
@@ -135,6 +146,14 @@ func _physics_process(delta: float) -> void:
 	# Update jump buffer timer
 	if jump_buffer_time > 0:
 		jump_buffer_time -= delta
+
+	# Check for pending touch jump - trigger after delay if still touching and no swipe detected
+	if touch_pending_jump and is_touching and touch_start_time > 0.0:
+		var touch_elapsed = (Time.get_ticks_msec() / 1000.0) - touch_start_time
+		if touch_elapsed >= TOUCH_JUMP_DELAY:
+			# Delay passed and no swipe detected - trigger jump
+			touch_jump_just_pressed = true
+			touch_pending_jump = false
 
 	# Check for jump input and buffer it
 	var jump_input_this_frame = Input.is_action_just_pressed("ui_accept") or touch_jump_just_pressed
