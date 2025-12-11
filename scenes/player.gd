@@ -38,7 +38,7 @@ const JUMP_BUFFER_DURATION: float = 0.15  # 150ms window to buffer jump input
 
 # Slide buffering - remembers slide input slightly before landing
 var slide_buffer_time: float = 0.0
-const SLIDE_BUFFER_DURATION: float = 0.15  # 150ms window to buffer slide input
+const SLIDE_BUFFER_DURATION: float = 0.5  # 500ms window to buffer slide input
 
 
 func _is_shotgun_active() -> bool:

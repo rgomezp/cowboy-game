@@ -3,35 +3,35 @@
 [ext_resource type="Script" uid="uid://cj7vh3tho8vg0" path="res://scenes/powerup_ui.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://tmby7edjc3bh" path="res://assets/img/buttons/powerups/gokart_powerup.png" id="2_gokart"]
 [ext_resource type="Texture2D" uid="uid://7qd1ie0qbadw" path="res://assets/img/buttons/powerups/shotgun_powerup.png" id="3_shotgun"]
-[ext_resource type="Texture2D" path="res://assets/img/buttons/powerups/heart_powerup.png" id="4_heart"]
+[ext_resource type="Texture2D" uid="uid://bsari4bpoqcst" path="res://assets/img/buttons/powerups/heart_powerup.png" id="4_heart"]
 
 [node name="PowerUpUI" type="CanvasLayer"]
 script = ExtResource("1_script")
 
 [node name="GokartButton" type="TextureButton" parent="."]
 texture_filter = 1
-offset_left = 811.0
-offset_top = 1334.0
-offset_right = 1011.0
-offset_bottom = 1534.0
+offset_left = 809.0
+offset_top = 1655.0
+offset_right = 1009.0
+offset_bottom = 1855.0
 texture_normal = ExtResource("2_gokart")
 stretch_mode = 5
 
 [node name="ShotgunButton" type="TextureButton" parent="."]
 texture_filter = 1
-offset_left = 811.0
-offset_top = 1334.0
-offset_right = 1011.0
-offset_bottom = 1534.0
+offset_left = 809.0
+offset_top = 1655.0
+offset_right = 1009.0
+offset_bottom = 1855.0
 texture_normal = ExtResource("3_shotgun")
 stretch_mode = 5
 
 [node name="HeartButton" type="TextureButton" parent="."]
 texture_filter = 1
-offset_left = 811.0
-offset_top = 1334.0
-offset_right = 1011.0
-offset_bottom = 1534.0
+offset_left = 809.0
+offset_top = 1655.0
+offset_right = 1009.0
+offset_bottom = 1855.0
 texture_normal = ExtResource("4_heart")
 stretch_mode = 5
 

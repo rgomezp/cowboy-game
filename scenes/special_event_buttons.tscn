@@ -9,19 +9,19 @@ script = ExtResource("2_script")
 
 [node name="MakesSenseButton" type="TextureButton" parent="."]
 texture_filter = 1
-offset_left = 724.0
-offset_top = 1350.0
-offset_right = 924.0
-offset_bottom = 1550.0
+offset_left = 771.0
+offset_top = 1602.0
+offset_right = 971.0
+offset_bottom = 1802.0
 texture_normal = ExtResource("3_makes_sense")
 stretch_mode = 5
 
 [node name="HwwatButton" type="TextureButton" parent="."]
 texture_filter = 1
-offset_left = 724.0
-offset_top = 1597.0
-offset_right = 924.0
-offset_bottom = 1797.0
+offset_left = 487.0
+offset_top = 1602.0
+offset_right = 687.0
+offset_bottom = 1802.0
 texture_normal = ExtResource("4_hwhat")
 stretch_mode = 5
 
