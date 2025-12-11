@@ -1,6 +1,6 @@
 [gd_scene load_steps=13 format=3 uid="uid://d4dx0psgprbgy"]
 
-[ext_resource type="Script" path="res://scenes/obstacles/tnt.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://daygvnkmuuwwm" path="res://scenes/obstacles/tnt.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://cjnewp7c0hb37" path="res://assets/img/obstacles/tnt.png" id="2_tnt"]
 [ext_resource type="Texture2D" uid="uid://bi7rj1mj6hx7q" path="res://assets/img/obstacles/tnt_explosion_sheet.png" id="3_nudj2"]
 
@@ -78,13 +78,13 @@ script = ExtResource("1_script")
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
 position = Vector2(341, 262)
-scale = Vector2(3.5, 3.5)
+scale = Vector2(5, 5)
 polygon = PackedVector2Array(-5.714287, -10.571426, 20.285713, -8.857147, 21.428566, 17.714287, -5.4285736, 17.714287)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
 position = Vector2(370, 219.00003)
-scale = Vector2(3.5, 3.5)
+scale = Vector2(5, 5)
 sprite_frames = SubResource("SpriteFrames_64m31")
 animation = &"explosion"
 autoplay = "default"
