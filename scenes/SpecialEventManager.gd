@@ -21,6 +21,12 @@ const PREPARE_DURATION: float = 3.0  # 5 seconds with only coins
 var button_delay_timer: float = 0.0
 const BUTTON_DELAY: float = 3.0  # 3 seconds delay before showing buttons
 
+# Scheduling range variables
+var min_event_interval: float = 10.0
+var max_event_interval: float = 30.0
+
+var is_debugging: bool = false
+
 var current_special: Node2D = null
 var current_special_scene_path: String = ""  # Track which scene was spawned
 var buttons_ui: CanvasLayer = null  # Reference to buttons UI
@@ -39,6 +45,9 @@ func initialize(special_scenes_param: Array[PackedScene], screen_size_param: Vec
 	shown_specials.clear()  # Initialize shown specials tracking
 	schedule_next_event()
 
+func debug():
+	is_debugging = true
+
 func reset():
 	time_since_last_event = 0.0
 	is_event_active = false
@@ -54,10 +63,13 @@ func reset():
 
 func schedule_next_event():
 	# Schedule next event in 10-30 seconds (10-30 seconds)
-	next_event_interval = randf_range(10.0, 30.0)
+	if is_debugging:
+		next_event_interval = 1.0
+	else:
+		next_event_interval = randf_range(min_event_interval, max_event_interval)
 	time_since_last_event = 0.0
 
-func update(delta: float, current_speed: float, camera_x: float) -> void: 
+func update(delta: float, current_speed: float, camera_x: float) -> void:
 	if is_event_active:
 		handle_active_event(delta, current_speed, camera_x)
 	else:

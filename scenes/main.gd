@@ -205,6 +205,7 @@ func setup_managers():
 	var day_night_powerup = DayNightPowerUp.new()
 	var powerups: Array[PowerUpBase] = [gokart_powerup, shotgun_powerup, heart_powerup, day_night_powerup]
 	powerup_manager.initialize(powerups, $PowerUpUI, lives_manager)
+
 	powerup_manager.powerup_activated.connect(_on_powerup_activated)
 	powerup_manager.powerup_deactivated.connect(_on_powerup_deactivated)
 	$PowerUpUI.powerup_button_pressed.connect(powerup_manager.on_powerup_button_pressed)
@@ -216,6 +217,7 @@ func setup_managers():
 	$PowerUpHud.initialize(powerup_manager)
 
 	special_event_manager = SpecialEventManager.new()
+
 	add_child(special_event_manager)
 	special_event_manager.special_event_started.connect(_on_special_event_started)
 	special_event_manager.special_event_ended.connect(_on_special_event_ended)
@@ -254,6 +256,10 @@ func setup_managers():
 	tnt_explosion_handler.initialize(obstacle_manager, lives_manager, self)
 	tnt_explosion_handler.explosion_started.connect(_on_explosion_started)
 	tnt_explosion_handler.explosion_finished.connect(_on_explosion_finished)
+
+  # D E B U G - COMMENT OUT BEFORE PUBLISHING
+	# special_event_manager.debug()
+	# powerup_manager.debug(gokart_powerup)
 
 func new_game():
 	# Reset game over flag

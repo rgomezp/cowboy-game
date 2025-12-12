@@ -39,6 +39,10 @@ func initialize(powerups: Array[PowerUpBase], ui: CanvasLayer, lives_mgr: Node =
 	powerup_ui = ui
 	lives_manager = lives_mgr
 
+# debug powerup overrides available powerups
+func debug(powerup: PowerUpBase):
+	available_powerups = [powerup]
+
 func reset():
 	# Cancel any active powerup
 	if current_powerup and current_powerup.is_active:
@@ -107,7 +111,7 @@ func update(delta: float, main_node: Node):
 
 		# Get filtered powerups (excluding heart if at max lives)
 		var filtered_powerups = get_available_powerups_for_selection()
-		
+
 		# Cycle through powerups
 		if last_cycle_time >= selection_cycle_interval and filtered_powerups.size() > 0:
 			current_selection_index = (current_selection_index + 1) % filtered_powerups.size()
@@ -148,7 +152,7 @@ func update(delta: float, main_node: Node):
 func select_random_powerup():
 	# Get filtered powerups (excluding heart if at max lives)
 	var filtered_powerups = get_available_powerups_for_selection()
-	
+
 	# Select a random powerup from available ones
 	if filtered_powerups.size() == 0:
 		return
@@ -200,12 +204,12 @@ func on_powerup_button_pressed(powerup_name: String):
 		return  # Wrong powerup
 	if not is_displaying and not is_blinking:
 		return  # Not the right time
-	
+
 	# Prevent activating if we're already in the process of activating
 	if is_activating:
 		print("[PowerUpManager] Already activating a powerup, ignoring button press")
 		return
-	
+
 	# Prevent activating if a powerup is already active
 	if current_powerup and current_powerup.is_active:
 		print("[PowerUpManager] Powerup already active, ignoring button press")
@@ -222,10 +226,10 @@ func activate_powerup(powerup: PowerUpBase):
 	if is_activating:
 		print("[PowerUpManager] Already activating, ignoring duplicate call")
 		return
-	
+
 	# Set activation flag
 	is_activating = true
-	
+
 	# Activate the powerup
 	current_powerup = powerup
 	powerup.activate(get_parent())
@@ -242,7 +246,7 @@ func activate_powerup(powerup: PowerUpBase):
 
 	powerup_activated.emit(powerup.name)
 	last_awarded_powerup_name = powerup.name
-	
+
 	# Clear activation flag after a short delay to allow instant powerups to complete
 	# Use call_deferred to ensure this happens after the activation completes
 	call_deferred("_clear_activation_flag")
