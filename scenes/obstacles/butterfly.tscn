@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://n5apfm23obln"]
+[gd_scene load_steps=19 format=3 uid="uid://n5apfm23obln"]
 
 [ext_resource type="Texture2D" uid="uid://bhr6kjvdhj8yn" path="res://assets/img/sprites/butterfly/butterfly_sprite_sheet.png" id="1_23sqe"]
 [ext_resource type="Script" uid="uid://ckhxftt4ov681" path="res://scenes/obstacles/butterfly.gd" id="2_lknyk"]
@@ -20,21 +20,37 @@ region = Rect2(128, 0, 64, 64)
 atlas = ExtResource("1_23sqe")
 region = Rect2(192, 0, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_4x44w"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_lknyk"]
 atlas = ExtResource("2_ss574")
 region = Rect2(0, 0, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_7cej6"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_4x44w"]
 atlas = ExtResource("2_ss574")
 region = Rect2(64, 0, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_ai5ku"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_7cej6"]
 atlas = ExtResource("2_ss574")
 region = Rect2(128, 0, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_135ar"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_ai5ku"]
 atlas = ExtResource("2_ss574")
 region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_135ar"]
+atlas = ExtResource("2_ss574")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yn676"]
+atlas = ExtResource("2_ss574")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hv840"]
+atlas = ExtResource("2_ss574")
+region = Rect2(384, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2pg2p"]
+atlas = ExtResource("2_ss574")
+region = Rect2(448, 0, 64, 64)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_4x44w"]
 animations = [{
@@ -57,6 +73,9 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_lknyk")
+}, {
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_4x44w")
 }, {
 "duration": 1.0,
@@ -67,6 +86,15 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_135ar")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yn676")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hv840")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2pg2p")
 }],
 "loop": false,
 "name": &"destroy",
@@ -80,15 +108,16 @@ size = Vector2(96.5, 58.5)
 size = Vector2(78.5, 60.5)
 
 [node name="Butterfly" type="Area2D"]
-monitorable = true
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
 position = Vector2(1000, 879)
 scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_4x44w")
+animation = &"destroy"
 autoplay = "default"
-frame_progress = 0.44515875
+frame = 7
+frame_progress = 1.0
 script = ExtResource("2_lknyk")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
