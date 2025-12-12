@@ -64,7 +64,7 @@ func show_special_event():
 	# Show "Special Event!" for 2 seconds
 	event_label.text = "SPECIAL EVENT"
 	event_label.modulate = Color.WHITE
-	label_settings.outline_size = 8
+	label_settings.outline_size = 20
 	label_settings.outline_color = Color(0, 0, 0, 1)  # Black outline
 	event_label.visible = true
 	showing_event = true
@@ -86,12 +86,12 @@ func show_outcome(outcome_type: String, time_seconds: float = -1.0):
 	# Show outcome message
 	match outcome_type:
 		"miss":
-			event_label.text = "Too Slow"
+			event_label.text = "TOO SLOW"
 			event_label.modulate = Color.WHITE  # White fill
 			label_settings.outline_size = 8
 			label_settings.outline_color = Color(0, 0, 0, 1)  # Black outline
 		"nice":
-			event_label.text = "Nice!"
+			event_label.text = "NICE!"
 			event_label.modulate = Color.GREEN
 			label_settings.outline_size = 8
 			label_settings.outline_color = Color(0, 0, 0, 1)  # Black outline
@@ -111,12 +111,12 @@ func show_outcome(outcome_type: String, time_seconds: float = -1.0):
 				timing_label_settings.outline_color = Color(0, 0, 0, 1)  # Black outline
 				timing_label.label_settings = timing_label_settings
 		"oops":
-			event_label.text = "Oops!"
+			event_label.text = "OOPS!"
 			event_label.modulate = Color.RED
 			label_settings.outline_size = 8
 			label_settings.outline_color = Color(0, 0, 0, 1)  # Black outline
 		"too_early":
-			event_label.text = "Too Early!"
+			event_label.text = "TOO EARLY!"
 			event_label.modulate = Color.ORANGE
 			label_settings.outline_size = 8
 			label_settings.outline_color = Color(0, 0, 0, 1)  # Black outline

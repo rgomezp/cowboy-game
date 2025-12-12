@@ -18,8 +18,10 @@ offset_right = 199.0
 offset_bottom = -250.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 30
 theme_override_fonts/font = ExtResource("1_font")
-theme_override_font_sizes/font_size = 70
+theme_override_font_sizes/font_size = 90
 text = "SPECIAL EVENT"
 horizontal_alignment = 1
 

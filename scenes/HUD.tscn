@@ -60,14 +60,20 @@ theme_override_font_sizes/font_size = 70
 horizontal_alignment = 2
 
 [node name="ScoreValueDelta" type="Label" parent="."]
-anchors_preset = 5
+anchors_preset = 8
 anchor_left = 0.5
+anchor_top = 0.5
 anchor_right = 0.5
-offset_left = -51.0
-offset_top = 43.0
-offset_right = 46.0
-offset_bottom = 114.0
+anchor_bottom = 0.5
+offset_left = -426.0
+offset_top = 374.0
+offset_right = -329.0
+offset_bottom = 445.0
 grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_constants/font_spacing_glyph = 5
 theme_override_fonts/font = ExtResource("1_qpvh6")
 theme_override_font_sizes/font_size = 70
 horizontal_alignment = 1
