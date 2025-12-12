@@ -90,6 +90,7 @@ var touch_start_detected : bool = false  # Track if touch was detected to start 
 # Score delta display variables
 var score_delta_timer: float = 0.0
 var score_delta_color_white: bool = true  # Track color alternation
+var score_delta_display_value: int = 0  # Track the current shown delta to avoid replacing larger values
 
 # Special event button result tracking
 var special_button_result: String = ""  # "correct", "wrong", or "" (not pressed)
@@ -431,6 +432,7 @@ func _process(delta: float) -> void:
 				# Hide label after 1 second
 				$Hud.get_node("ScoreValueDelta").hide()
 				score_delta_timer = 0.0
+				score_delta_display_value = 0
 
 		# Update HUD with current difficulty level
 		update_hud_difficulty_level()
@@ -461,6 +463,10 @@ func _on_score_delta(delta: int):
 	# Display the score delta for 1 second
 	var delta_label = $Hud.get_node("ScoreValueDelta")
 
+	# If already showing a delta, only replace it when the new one is at least as large in magnitude
+	if score_delta_timer > 0.0 and abs(display_delta) < abs(score_delta_display_value):
+		return
+
 	# Format as +100, +10, -500, etc. (negative values already have minus sign)
 	if display_delta > 0:
 		delta_label.text = "+" + str(display_delta)
@@ -485,6 +491,7 @@ func _on_score_delta(delta: int):
 
 	# Show the label
 	delta_label.show()
+	score_delta_display_value = display_delta
 
 func _on_obstacle_added(obstacle: Node):
 	collision_handler.connect_obstacle_signals(obstacle)
