@@ -3,7 +3,7 @@ extends "res://scenes/powerups/PowerUpBase.gd"
 # Gokart powerup:
 # - Pause all obstacle and foe spawns
 # - Generate a wall of 40 coins
-# - Quadruple game speed (gradual: 5s ramp up, 5s ramp down)
+# - Boost game speed up to ~4x (capped to keep absolute top speed reasonable)
 # - Lasts 7 seconds
 # - Switch to gokart animation (stub for now)
 
@@ -11,6 +11,7 @@ const RAMP_UP_DURATION: float = 5.0
 const RAMP_DOWN_DURATION: float = 5.0
 const COIN_WALL_SIZE: int = 100
 const SPEED_MULTIPLIER: float = 4.0
+const MAX_TARGET_SPEED: float = 40.0  # Cap to pre-level-expansion gokart top speed
 
 var base_speed: float = 0.0
 var speed_modifier: float = 1.0
@@ -97,4 +98,10 @@ func spawn_coin_wall(main_node: Node) -> void:
 		coin_manager.add_coin(coin)
 
 func get_speed_modifier() -> float:
-	return speed_modifier
+	# Cap the multiplier so the absolute gokart speed stays consistent even as base speed rises with higher levels
+	if base_speed <= 0.0:
+		return speed_modifier
+	var max_allowed_modifier := MAX_TARGET_SPEED / base_speed
+	# Never slow the player down during the powerup (clamp lower bound to 1.0)
+	max_allowed_modifier = max(max_allowed_modifier, 1.0)
+	return min(speed_modifier, max_allowed_modifier)
